@@ -20,3 +20,14 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+/* Fix Next.js portal element styling */
+nextjs-portal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: -1;
+}

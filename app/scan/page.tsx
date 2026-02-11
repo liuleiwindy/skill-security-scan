@@ -46,6 +46,9 @@ export default function ScanPage() {
         <p className={styles.subtitle}>
           Paste a GitHub repo URL to generate a shareable security report and poster.
         </p>
+        <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginTop: '0.5rem', textAlign: 'center' }}>
+          ⚠️ V0.1 Demo: This version uses simulated scan results for demonstration purposes.
+        </p>
         <form onSubmit={onSubmit} className={styles.form}>
           <input
             className={styles.input}

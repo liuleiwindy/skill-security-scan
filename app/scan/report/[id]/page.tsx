@@ -51,16 +51,36 @@ export default function ReportPage() {
     if (!id) return;
     let cancelled = false;
     async function run() {
-      const res = await fetch(`/api/scan/${id}`, { cache: "no-store" });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { message?: string };
-        if (!cancelled) setError(data.message ?? "Failed to load report");
-        return;
+      try {
+        const res = await fetch(`/api/scan/${id}`, { cache: "no-store" });
+        if (!res.ok) {
+          let errorMessage = "Failed to load report";
+          try {
+            const errorData = await res.json();
+            errorMessage = errorData.message || errorMessage;
+          } catch {
+            // If JSON parsing fails, use status text
+            errorMessage = res.statusText || errorMessage;
+          }
+          if (!cancelled) setError(errorMessage);
+          return;
+        }
+        const text = await res.text();
+        if (!text || text.trim().length === 0) {
+          if (!cancelled) setError("Empty response from server");
+          return;
+        }
+        try {
+          const data = JSON.parse(text) as ReportData;
+          if (!cancelled) setReport(data);
+        } catch (parseError) {
+          if (!cancelled) setError("Invalid response format");
+        }
+      } catch (error) {
+        if (!cancelled) setError("Failed to load report");
       }
-      const data = (await res.json()) as ReportData;
-      if (!cancelled) setReport(data);
     }
-    run().catch(() => setError("Failed to load report"));
+    run();
     return () => {
       cancelled = true;
     };
@@ -161,9 +181,12 @@ export default function ReportPage() {
         <div className={styles.disclaimerIcon}>⚠</div>
         <h3 className={styles.disclaimerTitle}>Disclaimer</h3>
         <p className={styles.disclaimerText}>
-          This is a lightweight static scan, not a full security audit.
+          <strong>V0.1 Demo Mode:</strong> This version uses simulated scan results based on repository URL patterns, not actual code analysis. The findings shown are for demonstration purposes only and do not reflect real security issues in the scanned repository.
         </p>
-        <p className={styles.engineVersion}>Engine: {report.engineVersion}</p>
+        <p className={styles.disclaimerText} style={{ marginTop: '0.75rem' }}>
+          This is a lightweight static scan demonstration, not a full security audit.
+        </p>
+        <p className={styles.engineVersion}>Engine: {report.engineVersion} (Demo Mode)</p>
       </section>
 
       <section className={styles.shareActions}>
