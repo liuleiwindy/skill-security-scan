@@ -20,7 +20,7 @@ import { getStoredReport } from '@/lib/store';
  *   "status": "safe",
  *   "summary": { "critical": 0, "high": 0, "medium": 1, "low": 2 },
  *   "findings": [],
- *   "engineVersion": "v0.1",
+ *   "engineVersion": "v0.2.1",
  *   "scannedAt": "2026-02-10T16:00:00.000Z"
  * }
  *
@@ -71,13 +71,13 @@ export async function GET(
 /**
  * DELETE /api/scan/:id
  *
- * Not implemented in V0.1
+ * Not implemented in v0.2.1
  */
 export async function DELETE() {
   return createErrorResponse(
     {
       error: 'method_not_allowed',
-      message: 'DELETE is not supported in V0.1',
+      message: 'DELETE is not supported in v0.2.1',
     },
     405
   );
@@ -86,13 +86,13 @@ export async function DELETE() {
 /**
  * PATCH /api/scan/:id
  *
- * Not implemented in V0.1
+ * Not implemented in v0.2.1
  */
 export async function PATCH() {
   return createErrorResponse(
     {
       error: 'method_not_allowed',
-      message: 'PATCH is not supported in V0.1',
+      message: 'PATCH is not supported in v0.2.1',
     },
     405
   );

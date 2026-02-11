@@ -61,3 +61,44 @@
   margin: 12px 0 0;
   color: #fca5a5;
 }
+
+.loadingHint {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #e2e8f0;
+  opacity: 0.9;
+}
+
+.progressBarContainer {
+  margin-top: 10px;
+}
+
+.progressBarTrack {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.3);
+  overflow: hidden;
+}
+
+.progressBarFill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #22d3ee, #38bdf8, #22d3ee);
+  transform-origin: left;
+  animation: scan-progress 30s ease-out infinite;
+}
+
+@keyframes scan-progress {
+  0% {
+    transform: scaleX(0.05);
+  }
+  50% {
+    transform: scaleX(0.85);
+  }
+  100% {
+    transform: scaleX(0.98);
+  }
+}

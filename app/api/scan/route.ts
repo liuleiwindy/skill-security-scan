@@ -6,6 +6,7 @@ import {
   ScanResponse,
 } from '@/lib/validation';
 import { createAndStoreReport } from '@/lib/store';
+import { RepoFetchError } from '@/lib/scan/github';
 
 /**
  * POST /api/scan
@@ -57,6 +58,26 @@ export async function POST(request: NextRequest) {
           message: 'Request body must be valid JSON',
         },
         400
+      );
+    }
+
+    if (error instanceof RepoFetchError) {
+      const statusCode =
+        error.code === "repo_not_found"
+          ? 404
+          : error.code === "repo_private" || error.code === "repo_access_limited"
+            ? 403
+            : error.code === "github_rate_limited"
+              ? 429
+              : error.code === "scan_timeout"
+                ? 408
+                : 502;
+      return createErrorResponse(
+        {
+          error: error.code,
+          message: error.message,
+        },
+        statusCode
       );
     }
 

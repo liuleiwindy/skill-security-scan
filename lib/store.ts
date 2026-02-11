@@ -3,7 +3,11 @@ import path from "node:path";
 import { sql } from "@vercel/postgres";
 import type { ScanReport } from "./scan/engine";
 import { runScan } from "./scan/engine";
-import { buildMockFilesForRepo } from "./scan/mock-files";
+import { calculateScoreResult } from "./scan/scoring";
+import { fetchGitHubRepoFiles } from "./scan/github";
+import { runSemgrepScan } from "./scan/adapters/semgrep";
+import { runGitleaksScan } from "./scan/adapters/gitleaks";
+import { dedupeAndSortFindings } from "./scan/adapters/normalize";
 
 type StoreShape = {
   reports: Map<string, ScanReport>;
@@ -21,6 +25,33 @@ const REPORTS_DIR = path.join(process.cwd(), "data", "reports");
 const POSTGRES_URL = process.env.POSTGRES_URL?.trim();
 const DATABASE_URL = process.env.DATABASE_URL?.trim();
 const USE_POSTGRES = Boolean(POSTGRES_URL || DATABASE_URL);
+
+type RuntimeDeps = {
+  fetchRepoFiles: typeof fetchGitHubRepoFiles;
+  runSemgrep: typeof runSemgrepScan;
+  runGitleaks: typeof runGitleaksScan;
+};
+
+let runtimeDeps: RuntimeDeps = {
+  fetchRepoFiles: fetchGitHubRepoFiles,
+  runSemgrep: runSemgrepScan,
+  runGitleaks: runGitleaksScan,
+};
+
+export function __setScanRuntimeDepsForTest(overrides: Partial<RuntimeDeps>) {
+  runtimeDeps = {
+    ...runtimeDeps,
+    ...overrides,
+  };
+}
+
+export function __resetScanRuntimeDepsForTest() {
+  runtimeDeps = {
+    fetchRepoFiles: fetchGitHubRepoFiles,
+    runSemgrep: runSemgrepScan,
+    runGitleaks: runGitleaksScan,
+  };
+}
 
 /** Vercel/serverless 下项目目录只读，必须用 Postgres；未配置时给出明确错误。 */
 export function requirePostgresForProduction(): void {
@@ -115,14 +146,44 @@ async function readReportPostgres(id: string): Promise<ScanReport | null> {
 
 export async function createAndStoreReport(repoUrl: string): Promise<ScanReport> {
   requirePostgresForProduction();
-  const report = runScan(repoUrl, buildMockFilesForRepo(repoUrl));
-  if (USE_POSTGRES) {
-    await writeReportPostgres(report);
-  } else {
-    writeReport(report);
+  const intake = await runtimeDeps.fetchRepoFiles(repoUrl);
+  try {
+    const internalReport = runScan(repoUrl, intake.files);
+    const [semgrepResult, gitleaksResult] = await Promise.all([
+      runtimeDeps.runSemgrep(intake.workspaceDir),
+      runtimeDeps.runGitleaks(intake.workspaceDir),
+    ]);
+    const mergedFindings = dedupeAndSortFindings([
+      ...internalReport.findings,
+      ...semgrepResult.findings,
+      ...gitleaksResult.findings,
+    ]);
+    const scoreResult = calculateScoreResult(mergedFindings);
+    const report: ScanReport = {
+      ...internalReport,
+      findings: mergedFindings,
+      score: scoreResult.score,
+      grade: scoreResult.grade,
+      status: scoreResult.status,
+      summary: scoreResult.summary,
+      engineVersion: "v0.2.1",
+      scanMeta: {
+        source: "github_api",
+        filesScanned: intake.files.length,
+        filesSkipped: intake.filesSkipped,
+      },
+    };
+
+    if (USE_POSTGRES) {
+      await writeReportPostgres(report);
+    } else {
+      writeReport(report);
+    }
+    getStore().reports.set(report.id, report);
+    return report;
+  } finally {
+    await intake.cleanup();
   }
-  getStore().reports.set(report.id, report);
-  return report;
 }
 
 export async function getStoredReport(id: string): Promise<ScanReport | null> {

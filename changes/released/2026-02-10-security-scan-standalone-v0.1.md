@@ -2,8 +2,8 @@
 
 ## 0. Link to Active Spec
 
-- `/Users/leo/Documents/mycode/skillstore/security-scan-site/specs/active/2026-02-10-security-scan-standalone-v0.1.md`
-- `/Users/leo/Documents/mycode/skillstore/security-scan-site/docs/v0.1-implementation-playbook.md`
+- `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/specs/released/2026-02-10-security-scan-standalone-v0.1.md`
+- `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/docs/v0.1-implementation-playbook.md`
 
 ## 1. Execution Status
 

@@ -27,6 +27,12 @@ export interface ScanReport {
   findings: Finding[];
   engineVersion: string;
   scannedAt: string; // ISO8601
+  scanMeta?: {
+    source?: string;
+    filesScanned?: number;
+    filesSkipped?: number;
+    timeoutMs?: number;
+  };
 }
 
 export interface ScanOptions {
@@ -50,9 +56,11 @@ export interface ScanOptions {
 /**
  * Default scan options for V0.1 demo.
  */
-const DEFAULT_SCAN_OPTIONS: ScanOptions = {
+export const DEFAULT_SCAN_OPTIONS: ScanOptions = {
   maxFiles: 100, // Reasonable limit for demo
   includeExtensions: [
+    '.md',
+    '.markdown',
     '.js',
     '.ts',
     '.jsx',
@@ -129,6 +137,20 @@ function shouldIncludeFile(
   return hasValidExtension;
 }
 
+const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+
+export function sortFindings(findings: Finding[]): Finding[] {
+  return findings.sort((a, b) => {
+    if (severityOrder[a.severity] !== severityOrder[b.severity]) {
+      return severityOrder[a.severity] - severityOrder[b.severity];
+    }
+    if (a.file !== b.file) {
+      return a.file.localeCompare(b.file);
+    }
+    return a.line - b.line;
+  });
+}
+
 /**
  * Run scan on mock file system.
  *
@@ -167,13 +189,7 @@ export function runScan(
   }
 
   // Sort findings by severity (critical first) then by file path
-  const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-  allFindings.sort((a, b) => {
-    if (severityOrder[a.severity] !== severityOrder[b.severity]) {
-      return severityOrder[a.severity] - severityOrder[b.severity];
-    }
-    return a.file.localeCompare(b.file);
-  });
+  sortFindings(allFindings);
 
   // Calculate score
   const scoreResult = calculateScoreResult(allFindings);
@@ -187,7 +203,7 @@ export function runScan(
     status: scoreResult.status,
     summary: scoreResult.summary,
     findings: allFindings,
-    engineVersion: 'v0.1',
+    engineVersion: 'v0.2.1',
     scannedAt,
   };
 
@@ -211,13 +227,7 @@ export function runScanOnFile(
   const scoreResult = calculateScoreResult(findings);
 
   // Sort findings
-  const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-  findings.sort((a, b) => {
-    if (severityOrder[a.severity] !== severityOrder[b.severity]) {
-      return severityOrder[a.severity] - severityOrder[b.severity];
-    }
-    return a.file.localeCompare(b.file);
-  });
+  sortFindings(findings);
 
   return {
     id: scanId,
@@ -227,7 +237,7 @@ export function runScanOnFile(
     status: scoreResult.status,
     summary: scoreResult.summary,
     findings,
-    engineVersion: 'v0.1',
+    engineVersion: 'v0.2.1',
     scannedAt,
   };
 }
@@ -309,7 +319,7 @@ export function validateReport(report: ScanReport): boolean {
   }
 
   // Engine version
-  if (report.engineVersion !== 'v0.1') {
+  if (!/^v0\.\d+(\.\d+)?$/.test(report.engineVersion)) {
     return false;
   }
 

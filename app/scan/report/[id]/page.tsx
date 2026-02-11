@@ -101,7 +101,14 @@ export default function ReportPage() {
   }
 
   if (!report) {
-    return <main className={styles.container}>Loading report...</main>;
+    return (
+      <main className={styles.container}>
+        <p>Loading report...</p>
+        <p style={{ marginTop: "8px", color: "#cbd5e1", fontSize: "14px" }}>
+          We&apos;re finalizing your scan results. This can take a few more seconds for larger repositories.
+        </p>
+      </main>
+    );
   }
 
   const status = statusTag(report.status);
@@ -181,12 +188,12 @@ export default function ReportPage() {
         <div className={styles.disclaimerIcon}>⚠</div>
         <h3 className={styles.disclaimerTitle}>Disclaimer</h3>
         <p className={styles.disclaimerText}>
-          <strong>V0.1 Demo Mode:</strong> This version uses simulated scan results based on repository URL patterns, not actual code analysis. The findings shown are for demonstration purposes only and do not reflect real security issues in the scanned repository.
+          This report is based on static analysis and signature-based pattern matching.
         </p>
         <p className={styles.disclaimerText} style={{ marginTop: '0.75rem' }}>
-          This is a lightweight static scan demonstration, not a full security audit.
+          It is not a full security audit and does not execute repository code.
         </p>
-        <p className={styles.engineVersion}>Engine: {report.engineVersion} (Demo Mode)</p>
+        <p className={styles.engineVersion}>Engine: {report.engineVersion}</p>
       </section>
 
       <section className={styles.shareActions}>
