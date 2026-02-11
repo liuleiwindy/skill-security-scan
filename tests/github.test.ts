@@ -108,6 +108,90 @@ describe("github intake", () => {
     vi.unstubAllGlobals();
   });
 
+  it("skips empty blob content instead of failing the whole scan", async () => {
+    const fetchMock = vi.fn(async (input: string) => {
+      if (input.includes("/git/blobs/sha_empty")) {
+        return new Response(
+          JSON.stringify({
+            encoding: "base64",
+            content: "",
+          }),
+          { status: 200 },
+        );
+      }
+      if (input.includes("/git/blobs/sha_ok")) {
+        return new Response(
+          JSON.stringify({
+            encoding: "base64",
+            content: Buffer.from("export const ok = 1;\n").toString("base64"),
+          }),
+          { status: 200 },
+        );
+      }
+      if (input.includes("/repos/acme/skill-repo") && !input.includes("/git/trees/")) {
+        return new Response(JSON.stringify({ default_branch: "main" }), { status: 200 });
+      }
+      if (input.includes("/git/trees/main")) {
+        return new Response(
+          JSON.stringify({
+            tree: [
+              { path: "src/empty.ts", type: "blob", size: 10, sha: "sha_empty" },
+              { path: "src/index.ts", type: "blob", size: 20, sha: "sha_ok" },
+            ],
+          }),
+          { status: 200 },
+        );
+      }
+      return new Response("{}", { status: 404 });
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await fetchGitHubRepoFiles("https://github.com/acme/skill-repo");
+    expect(result.files).toHaveLength(1);
+    expect(result.filesSkipped).toBeGreaterThanOrEqual(1);
+    expect(result.files[0].path).toBe("src/index.ts");
+    await result.cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("scans only selected tree subpath", async () => {
+    const fetchMock = vi.fn(async (input: string) => {
+      if (input.includes("/git/blobs/sha_in")) {
+        return new Response(
+          JSON.stringify({
+            encoding: "base64",
+            content: Buffer.from("inside subpath").toString("base64"),
+          }),
+          { status: 200 },
+        );
+      }
+      if (input.includes("/repos/acme/skill-repo") && !input.includes("/git/trees/")) {
+        return new Response(JSON.stringify({ default_branch: "main" }), { status: 200 });
+      }
+      if (input.includes("/git/trees/main")) {
+        return new Response(
+          JSON.stringify({
+            tree: [
+              { path: "developer-growth-analysis/SKILL.md", type: "blob", size: 30, sha: "sha_in" },
+              { path: "other/path.txt", type: "blob", size: 20, sha: "sha_out" },
+            ],
+          }),
+          { status: 200 },
+        );
+      }
+      return new Response("{}", { status: 404 });
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await fetchGitHubRepoFiles(
+      "https://github.com/acme/skill-repo/tree/main/developer-growth-analysis",
+    );
+    expect(result.files).toHaveLength(1);
+    expect(result.files[0].path).toBe("developer-growth-analysis/SKILL.md");
+    await result.cleanup();
+    vi.unstubAllGlobals();
+  });
+
   it("maps github rate limit to typed error", async () => {
     vi.stubGlobal(
       "fetch",
