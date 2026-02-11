@@ -1,0 +1,227 @@
+.container {
+  min-height: 100vh;
+  padding: 20px;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.topActions {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.topLinkPrimary,
+.topLink {
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.topLinkPrimary {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.topLink {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+}
+
+.hero {
+  margin-bottom: 18px;
+}
+
+.scoreCard {
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  border-radius: 16px;
+  color: #fff;
+  padding: 20px;
+}
+
+.scoreHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.scoreMain {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.gradeBadge {
+  font-size: 42px;
+  font-weight: 800;
+}
+
+.scoreValue {
+  font-size: 48px;
+  font-weight: 800;
+}
+
+.statusBadge {
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  height: fit-content;
+}
+
+.repoInfo {
+  font-size: 14px;
+  opacity: 0.95;
+}
+
+.repoUrl,
+.scanTime {
+  margin: 0;
+}
+
+.summary,
+.findings,
+.safeMessage,
+.disclaimer,
+.shareActions {
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.sectionTitle {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.summaryItem {
+  text-align: center;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 10px 6px;
+}
+
+.summaryCount {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.summaryLabel {
+  font-size: 12px;
+}
+
+.findingsList {
+  display: grid;
+  gap: 10px;
+}
+
+.findingCard {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.findingHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.severityBadge {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 4px 8px;
+}
+
+.findingTitle {
+  margin: 0;
+  font-size: 16px;
+}
+
+.findingLocation {
+  color: #334155;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.snippet {
+  margin: 8px 0;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+  overflow: auto;
+  font-size: 12px;
+}
+
+.recommendationText {
+  margin: 0;
+  font-size: 14px;
+  color: #334155;
+}
+
+.safeIcon {
+  font-size: 26px;
+}
+
+.safeTitle,
+.safeText,
+.disclaimerTitle,
+.disclaimerText,
+.engineVersion {
+  margin: 6px 0;
+}
+
+.disclaimerIcon {
+  font-size: 18px;
+}
+
+.shareButtons {
+  display: grid;
+  gap: 8px;
+}
+
+.shareButton {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #0f172a;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+@media (min-width: 760px) {
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .shareButtons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

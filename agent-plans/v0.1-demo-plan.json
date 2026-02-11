@@ -1,0 +1,96 @@
+{
+  "name": "security-scan-v0.1-demo",
+  "tasks": [
+    {
+      "id": "A-api-skeleton",
+      "role": "backend-worker",
+      "objective": "Implement API route skeleton for POST /api/scan, GET /api/scan/:id, GET /api/scan/:id/poster with request validation and structured error JSON.",
+      "file_scope": [
+        "app/api/scan/route.ts",
+        "app/api/scan/[id]/route.ts",
+        "app/api/scan/[id]/poster/route.ts",
+        "lib/validation.ts"
+      ],
+      "constraints": [
+        "Follow active spec and implementation playbook",
+        "Do not add auth or billing features"
+      ],
+      "output_format": [
+        "Summary",
+        "Changed files",
+        "Manual test commands"
+      ]
+    },
+    {
+      "id": "B-scan-engine",
+      "role": "security-worker",
+      "objective": "Implement lightweight deterministic scan rules and growth-friendly scoring model.",
+      "file_scope": [
+        "lib/scan/rules.ts",
+        "lib/scan/scoring.ts",
+        "lib/scan/engine.ts"
+      ],
+      "constraints": [
+        "Support command execution, download-run, and secret pattern detection",
+        "Output must match report contract in active spec"
+      ],
+      "output_format": [
+        "Rule list",
+        "Scoring summary",
+        "Sample output JSON"
+      ]
+    },
+    {
+      "id": "C-report-page",
+      "role": "frontend-worker",
+      "objective": "Build mobile-first report page UI with score/grade/status, findings, remediation, disclaimer and share actions.",
+      "file_scope": [
+        "app/scan/report/[id]/page.tsx",
+        "app/scan/report/[id]/report.css"
+      ],
+      "constraints": [
+        "Keep social-share intent and readability as first priority",
+        "No desktop-only layout assumptions"
+      ],
+      "output_format": [
+        "UI structure",
+        "Responsive behavior notes"
+      ]
+    },
+    {
+      "id": "D-poster-page",
+      "role": "frontend-worker",
+      "objective": "Build social-style poster page with QR code and consistent content hierarchy with report hero.",
+      "file_scope": [
+        "app/scan/poster/[id]/page.tsx",
+        "app/scan/poster/[id]/poster.css",
+        "lib/qr.ts"
+      ],
+      "constraints": [
+        "Jike-first sharing style",
+        "Poster must be screenshot-ready on mobile"
+      ],
+      "output_format": [
+        "Poster layout summary",
+        "QR behavior"
+      ]
+    },
+    {
+      "id": "E-jike-copy-pack",
+      "role": "growth-worker",
+      "objective": "Draft founder-account Jike launch copy pack: 1 main post + 2 alternate hooks + CTA structure.",
+      "file_scope": [
+        "docs/jike-launch-copy-v0.1.md"
+      ],
+      "constraints": [
+        "Tone: confident, product-native, non-hype",
+        "Must align with public report and growth-friendly score framing"
+      ],
+      "output_format": [
+        "Primary copy",
+        "2 alternate hooks",
+        "Posting template"
+      ]
+    }
+  ]
+}
