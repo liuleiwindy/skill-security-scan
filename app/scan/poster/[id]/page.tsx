@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import styles from "./poster.module.css";
 import { generateQRCode, getReportUrl } from "@/lib/qr";
 import { getStoredReport } from "@/lib/store";
@@ -22,7 +23,11 @@ export default async function PosterPage({
     notFound();
   }
 
-  const qrCode = await generateQRCode(getReportUrl(id), { size: 140, margin: 1 });
+  const reqHeaders = await headers();
+  const protocol = reqHeaders.get("x-forwarded-proto") || "https";
+  const host = reqHeaders.get("x-forwarded-host") || reqHeaders.get("host");
+  const baseUrl = host ? `${protocol}://${host}` : undefined;
+  const qrCode = await generateQRCode(getReportUrl(id, baseUrl), { size: 140, margin: 1 });
   const totalIssues = report.summary.critical + report.summary.high + report.summary.medium + report.summary.low;
 
   return (

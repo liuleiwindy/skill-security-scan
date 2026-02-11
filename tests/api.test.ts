@@ -109,4 +109,27 @@ describe("api routes", () => {
     const payload = (await res.json()) as { error: string };
     expect(payload.error).toBe("repo_not_found");
   });
+
+  it("builds poster qrUrl from forwarded host headers", async () => {
+    const createReq = new Request("http://localhost/api/scan", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ repoUrl: "https://github.com/org/repo" }),
+    });
+    const created = await createScan(createReq as any);
+    const payload = (await created.json()) as { scanId: string };
+
+    const posterReq = new Request("http://localhost/api/scan/x/poster", {
+      headers: {
+        "x-forwarded-proto": "https",
+        "x-forwarded-host": "skill-security-scan.vercel.app",
+      },
+    });
+    const posterResp = await getPoster(posterReq as any, {
+      params: Promise.resolve({ id: payload.scanId }),
+    });
+    expect(posterResp.status).toBe(200);
+    const poster = (await posterResp.json()) as { qrUrl: string };
+    expect(poster.qrUrl).toBe(`https://skill-security-scan.vercel.app/scan/report/${payload.scanId}`);
+  });
 });

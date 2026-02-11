@@ -16,6 +16,26 @@ export interface QRCodeOptions {
   };
 }
 
+function normalizeBaseUrl(url: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed.replace(/\/+$/, '');
+  }
+  return `https://${trimmed.replace(/\/+$/, '')}`;
+}
+
+function getDefaultBaseUrl(): string {
+  const configured =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    process.env.SITE_URL ||
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ||
+    process.env.VERCEL_URL ||
+    'http://localhost:3000';
+  return normalizeBaseUrl(configured);
+}
+
 /**
  * Generate QR code as SVG data URL
  *
@@ -100,7 +120,7 @@ export async function generateQRCodeSVG(
  * Get poster URL for a scan report
  */
 export function getPosterUrl(scanId: string, baseUrl: string = ''): string {
-  const base = baseUrl || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const base = normalizeBaseUrl(baseUrl) || getDefaultBaseUrl();
   return `${base}/scan/poster/${scanId}`;
 }
 
@@ -108,6 +128,6 @@ export function getPosterUrl(scanId: string, baseUrl: string = ''): string {
  * Get report URL for a scan
  */
 export function getReportUrl(scanId: string, baseUrl: string = ''): string {
-  const base = baseUrl || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const base = normalizeBaseUrl(baseUrl) || getDefaultBaseUrl();
   return `${base}/scan/report/${scanId}`;
 }
