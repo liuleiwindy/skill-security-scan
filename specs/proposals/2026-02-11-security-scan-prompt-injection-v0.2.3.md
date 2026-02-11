@@ -96,6 +96,8 @@ Add prompt-injection findings under existing findings model without schema break
 2. Only two classes are tracked: `PI-1` and `PI-2`.
 3. No role split and no paywall mechanics in this version.
 4. `promptfoo` is used as validation aid, not as a hard runtime dependency.
+5. Local context window for co-occurrence matching is fixed at ±2 lines (5-line total window).
+6. `snippet` max length is fixed at 200 characters.
 
 ## 8. Next Step in OpenSpec Flow
 
