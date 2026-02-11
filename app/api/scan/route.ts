@@ -62,10 +62,18 @@ export async function POST(request: NextRequest) {
 
     // Vercel 未配置数据库时给出明确提示
     const message =
-      error instanceof Error && error.message.includes('POSTGRES_URL')
+      error instanceof Error && 
+      (error.message.includes('POSTGRES_URL') || error.message.includes('DATABASE_URL') || error.message.includes('Storage not configured'))
         ? error.message
         : 'An unexpected error occurred. Please try again.';
     console.error('Unexpected error in POST /api/scan:', error);
+    console.error('Environment check:', {
+      VERCEL: process.env.VERCEL,
+      HAS_POSTGRES_URL: !!process.env.POSTGRES_URL,
+      HAS_DATABASE_URL: !!process.env.DATABASE_URL,
+      POSTGRES_URL_LENGTH: process.env.POSTGRES_URL?.length || 0,
+      DATABASE_URL_LENGTH: process.env.DATABASE_URL?.length || 0,
+    });
     return createErrorResponse(
       {
         error: 'internal_error',

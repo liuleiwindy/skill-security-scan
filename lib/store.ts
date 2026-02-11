@@ -17,12 +17,20 @@ declare global {
 }
 
 const REPORTS_DIR = path.join(process.cwd(), "data", "reports");
-const USE_POSTGRES = Boolean(process.env.POSTGRES_URL || process.env.DATABASE_URL);
+// 检查环境变量是否存在且非空
+const POSTGRES_URL = process.env.POSTGRES_URL?.trim();
+const DATABASE_URL = process.env.DATABASE_URL?.trim();
+const USE_POSTGRES = Boolean(POSTGRES_URL || DATABASE_URL);
 
 /** Vercel/serverless 下项目目录只读，必须用 Postgres；未配置时给出明确错误。 */
 export function requirePostgresForProduction(): void {
   if (USE_POSTGRES) return;
   if (process.env.VERCEL === "1") {
+    console.error('Database configuration check failed:', {
+      VERCEL: process.env.VERCEL,
+      POSTGRES_URL: POSTGRES_URL ? `[${POSTGRES_URL.length} chars]` : 'not set',
+      DATABASE_URL: DATABASE_URL ? `[${DATABASE_URL.length} chars]` : 'not set',
+    });
     throw new Error(
       "Storage not configured. Set POSTGRES_URL or DATABASE_URL in Vercel Environment Variables. See README."
     );
