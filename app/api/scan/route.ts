@@ -60,12 +60,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Handle unexpected errors
+    // Vercel 未配置数据库时给出明确提示
+    const message =
+      error instanceof Error && error.message.includes('POSTGRES_URL')
+        ? error.message
+        : 'An unexpected error occurred. Please try again.';
     console.error('Unexpected error in POST /api/scan:', error);
     return createErrorResponse(
       {
         error: 'internal_error',
-        message: 'An unexpected error occurred. Please try again.',
+        message,
       },
       500
     );

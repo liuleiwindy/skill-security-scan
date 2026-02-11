@@ -19,6 +19,16 @@ declare global {
 const REPORTS_DIR = path.join(process.cwd(), "data", "reports");
 const USE_POSTGRES = Boolean(process.env.POSTGRES_URL || process.env.DATABASE_URL);
 
+/** Vercel/serverless 下项目目录只读，必须用 Postgres；未配置时给出明确错误。 */
+export function requirePostgresForProduction(): void {
+  if (USE_POSTGRES) return;
+  if (process.env.VERCEL === "1") {
+    throw new Error(
+      "Storage not configured. Set POSTGRES_URL or DATABASE_URL in Vercel Environment Variables. See README."
+    );
+  }
+}
+
 function ensureReportsDir() {
   if (!fs.existsSync(REPORTS_DIR)) {
     fs.mkdirSync(REPORTS_DIR, { recursive: true });
@@ -96,6 +106,7 @@ async function readReportPostgres(id: string): Promise<ScanReport | null> {
 }
 
 export async function createAndStoreReport(repoUrl: string): Promise<ScanReport> {
+  requirePostgresForProduction();
   const report = runScan(repoUrl, buildMockFilesForRepo(repoUrl));
   if (USE_POSTGRES) {
     await writeReportPostgres(report);
