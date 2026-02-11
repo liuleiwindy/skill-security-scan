@@ -10,7 +10,7 @@
  */
 
 import { runAllRules, Finding } from './rules';
-import { calculateScoreResult, ScoreResult } from './scoring';
+import { calculateScoreResult } from './scoring';
 
 export interface ScanReport {
   id: string;

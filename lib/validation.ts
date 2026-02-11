@@ -176,7 +176,7 @@ export function isAllowedDomain(url: string): boolean {
       hostname = urlObj.hostname;
     }
 
-    return ALLOWED_GIT_DOMAINS.includes(hostname as any);
+    return (ALLOWED_GIT_DOMAINS as readonly string[]).includes(hostname);
   } catch {
     return false;
   }

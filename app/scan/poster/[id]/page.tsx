@@ -54,6 +54,7 @@ export default async function PosterPage({
         </section>
 
         <footer className={styles.footer}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={qrCode} alt="Report QR" className={styles.qr} />
           <p className={styles.cta}>Scan to open full report</p>
           <div className={styles.footerActions}>

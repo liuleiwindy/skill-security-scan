@@ -5,7 +5,7 @@
  * matching the spec contract (Section 8: Report Data Contract).
  */
 
-import { runScan, runScanOnFile, validateReport, ScanReport, MockFile } from './engine';
+import { runScan, validateReport, ScanReport, MockFile } from './engine';
 
 /**
  * Sample 1: Clean Repository (Grade A, Safe)
