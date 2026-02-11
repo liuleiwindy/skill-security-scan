@@ -16,7 +16,7 @@ Run multiple Claude CLI workers in parallel for V0.1 implementation tasks.
 ```bash
 python3 scripts/orchestrate_claude_agents.py \
   --plan agent-plans/v0.1-demo-plan.json \
-  --workdir /Users/leo/Documents/mycode/skillstore/security-scan-site \
+  --workdir . \
   --max-workers 3 \
   --permission-mode bypassPermissions \
   --timeout-sec 180
@@ -27,7 +27,7 @@ Optional model override:
 ```bash
 python3 scripts/orchestrate_claude_agents.py \
   --plan agent-plans/v0.1-demo-plan.json \
-  --workdir /Users/leo/Documents/mycode/skillstore/security-scan-site \
+  --workdir . \
   --max-workers 3 \
   --model sonnet \
   --permission-mode bypassPermissions \

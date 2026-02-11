@@ -98,4 +98,4 @@ V0.2.1 is releasable only when all checks pass:
 ## 8. Next Step
 
 1. Move change plan `2026-02-11-security-scan-real-v0.2.1.md` to in-progress.
-2. Execute `docs/v0.2.1-implementation-playbook.md`.
+2. Execute `docs/archive/v0.2.1-implementation-playbook.md`.

@@ -2,8 +2,8 @@
 
 ## 0. Links
 
-- Spec: `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/specs/released/2026-02-11-report-ssr-ux-v0.2.1.1.md`
-- Playbook: `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/docs/v0.2.1.1-implementation-playbook.md`
+- Spec: `specs/released/2026-02-11-report-ssr-ux-v0.2.1.1.md`
+- Playbook: `docs/archive/v0.2.1.1-implementation-playbook.md`
 
 ## 1. Status
 

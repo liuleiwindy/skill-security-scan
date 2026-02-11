@@ -142,4 +142,4 @@ This site is growth-first and social-first, with a strong mobile experience.
 
 Implementation-level breakdown is defined in:
 
-- `security-scan-site/docs/v0.1-implementation-playbook.md`
+- `security-scan-site/docs/archive/v0.1-implementation-playbook.md`

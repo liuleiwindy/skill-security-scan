@@ -5,8 +5,8 @@
 - Date: 2026-02-11
 - Stage: Released
 - Owner: Product + Engineering
-- Parent proposal: `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/specs/proposals/2026-02-11-security-scan-real-v0.2.md`
-- Parent release: `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/specs/released/2026-02-11-security-scan-real-v0.2.1.md`
+- Parent proposal: `specs/proposals/2026-02-11-security-scan-real-v0.2.md`
+- Parent release: `specs/released/2026-02-11-security-scan-real-v0.2.1.md`
 
 ## 1. Objective
 

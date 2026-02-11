@@ -2,8 +2,8 @@
 
 ## 0. Link to Active Spec
 
-- `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/specs/active/2026-02-11-security-scan-real-v0.2.1.md`
-- `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/docs/v0.2.1-implementation-playbook.md`
+- `specs/active/2026-02-11-security-scan-real-v0.2.1.md`
+- `docs/archive/v0.2.1-implementation-playbook.md`
 
 ## 1. Execution Status
 

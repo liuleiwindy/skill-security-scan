@@ -2,10 +2,10 @@
 
 ## 0. Links
 
-- Proposal: `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/specs/proposals/2026-02-11-security-scan-real-v0.2.2.md`
-- Spec: `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/specs/released/2026-02-11-security-scan-real-v0.2.2.md`
-- Playbook: `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/docs/v0.2.2-implementation-playbook.md`
-- Parent plan: `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/changes/active/2026-02-11-security-scan-real-v0.2.md`
+- Proposal: `specs/proposals/2026-02-11-security-scan-real-v0.2.2.md`
+- Spec: `specs/released/2026-02-11-security-scan-real-v0.2.2.md`
+- Playbook: `docs/archive/v0.2.2-implementation-playbook.md`
+- Parent plan: `changes/active/2026-02-11-security-scan-real-v0.2.md`
 
 ## 1. Execution Status
 
