@@ -41,13 +41,13 @@ export default function ScanPage() {
   return (
     <main className={styles.page}>
       <section className={styles.card}>
-        <p className={styles.badge}>Security Scan V0.1</p>
+        <p className={styles.badge}>Security Scan v0.2.1</p>
         <h1 className={styles.title}>Scan Your Skill Repo</h1>
         <p className={styles.subtitle}>
           Paste a GitHub repo URL to generate a shareable security report and poster.
         </p>
         <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginTop: '0.5rem', textAlign: 'center' }}>
-          ⚠️ V0.1 Demo: This version uses simulated scan results for demonstration purposes.
+          Static analysis only. This scan does not execute repository code.
         </p>
         <form onSubmit={onSubmit} className={styles.form}>
           <input
