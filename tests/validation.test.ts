@@ -25,6 +25,7 @@ describe("validation", () => {
 
   it("validates scan request object", () => {
     expect(validateScanRequest({ repoUrl: "https://github.com/a/b" }).valid).toBe(true);
+    expect(validateScanRequest({ repoUrl: "npx create-next-app@14 my-app" }).valid).toBe(true);
     expect(validateScanRequest({ repoUrl: "x" }).valid).toBe(false);
   });
 

@@ -5,6 +5,8 @@ import type { ScanReport } from "./scan/engine";
 import { runScan } from "./scan/engine";
 import { calculateScoreResult } from "./scan/scoring";
 import { fetchGitHubRepoFiles } from "./scan/github";
+import { classifyScanInput, fetchNpmPackageFiles, resolveSkillsAddGitHubTarget } from "./scan/npm";
+import type { NpmFetchResult } from "./scan/npm";
 import { runSemgrepScan } from "./scan/adapters/semgrep";
 import { runGitleaksScan } from "./scan/adapters/gitleaks";
 import { dedupeAndSortFindings } from "./scan/adapters/normalize";
@@ -28,12 +30,30 @@ const USE_POSTGRES = Boolean(POSTGRES_URL || DATABASE_URL);
 
 type RuntimeDeps = {
   fetchRepoFiles: typeof fetchGitHubRepoFiles;
+  fetchNpmFiles: typeof fetchNpmPackageFiles;
+  resolveSkillsAddGitHub: typeof resolveSkillsAddGitHubTarget;
   runSemgrep: typeof runSemgrepScan;
   runGitleaks: typeof runGitleaksScan;
 };
 
+const SKILLS_ADD_GITHUB_TIMEOUT_MS = 45_000;
+const SKILLS_ADD_MAX_ROOTS = 20;
+
+function prioritizeSkillRoots(skillRoots: string[], maxRoots: number): string[] {
+  const unique = [...new Set(skillRoots.map((root) => root.trim()).filter(Boolean))];
+  // Prefer shallower roots first to maximize coverage under timeout constraints.
+  unique.sort((a, b) => {
+    const depthDiff = a.split("/").length - b.split("/").length;
+    if (depthDiff !== 0) return depthDiff;
+    return a.localeCompare(b);
+  });
+  return unique.slice(0, maxRoots);
+}
+
 let runtimeDeps: RuntimeDeps = {
   fetchRepoFiles: fetchGitHubRepoFiles,
+  fetchNpmFiles: fetchNpmPackageFiles,
+  resolveSkillsAddGitHub: resolveSkillsAddGitHubTarget,
   runSemgrep: runSemgrepScan,
   runGitleaks: runGitleaksScan,
 };
@@ -48,6 +68,8 @@ export function __setScanRuntimeDepsForTest(overrides: Partial<RuntimeDeps>) {
 export function __resetScanRuntimeDepsForTest() {
   runtimeDeps = {
     fetchRepoFiles: fetchGitHubRepoFiles,
+    fetchNpmFiles: fetchNpmPackageFiles,
+    resolveSkillsAddGitHub: resolveSkillsAddGitHubTarget,
     runSemgrep: runSemgrepScan,
     runGitleaks: runGitleaksScan,
   };
@@ -146,9 +168,30 @@ async function readReportPostgres(id: string): Promise<ScanReport | null> {
 
 export async function createAndStoreReport(repoUrl: string): Promise<ScanReport> {
   requirePostgresForProduction();
-  const intake = await runtimeDeps.fetchRepoFiles(repoUrl);
+  const inputKind = classifyScanInput(repoUrl);
+  const skillsGitHubTarget =
+    inputKind === "npm_command"
+      ? await runtimeDeps.resolveSkillsAddGitHub(repoUrl).catch(() => null)
+      : null;
+  const prioritizedSkillRoots = skillsGitHubTarget
+    ? prioritizeSkillRoots(skillsGitHubTarget.skillRoots, SKILLS_ADD_MAX_ROOTS)
+    : [];
+  const effectiveKind = skillsGitHubTarget ? "github_url" : inputKind;
+  const intake =
+    effectiveKind === "npm_command"
+      ? await runtimeDeps.fetchNpmFiles(repoUrl)
+      : await runtimeDeps.fetchRepoFiles(
+          skillsGitHubTarget?.repoUrl || repoUrl,
+          skillsGitHubTarget
+            ? {
+                timeoutMs: SKILLS_ADD_GITHUB_TIMEOUT_MS,
+                ...(prioritizedSkillRoots.length > 0 ? { subPaths: prioritizedSkillRoots } : {}),
+              }
+            : undefined,
+        );
+  const npmIntake: NpmFetchResult | null = effectiveKind === "npm_command" ? (intake as NpmFetchResult) : null;
   try {
-    const internalReport = runScan(repoUrl, intake.files);
+    const internalReport = runScan(skillsGitHubTarget?.repoUrl || repoUrl, intake.files);
     const [semgrepResult, gitleaksResult] = await Promise.all([
       runtimeDeps.runSemgrep(intake.workspaceDir),
       runtimeDeps.runGitleaks(intake.workspaceDir),
@@ -166,11 +209,13 @@ export async function createAndStoreReport(repoUrl: string): Promise<ScanReport>
       grade: scoreResult.grade,
       status: scoreResult.status,
       summary: scoreResult.summary,
-      engineVersion: "v0.2.1",
+      engineVersion: "v0.2.2",
       scanMeta: {
-        source: "github_api",
+        source: effectiveKind === "npm_command" ? "npm_registry" : "github_api",
         filesScanned: intake.files.length,
         filesSkipped: intake.filesSkipped,
+        packageName: npmIntake?.packageName,
+        packageVersion: npmIntake?.packageVersion,
       },
     };
 

@@ -65,6 +65,14 @@ export function validateRepoUrl(url: string): { valid: boolean; error?: string }
   }
 
   const trimmedUrl = url.trim();
+  if (!trimmedUrl) {
+    return { valid: false, error: 'Repository URL is required' };
+  }
+
+  // npm/npx command input is validated in intake parser.
+  if (/^(npx|npm)\b/.test(trimmedUrl)) {
+    return { valid: true };
+  }
 
   // GitHub HTTPS URL pattern (supports repo root and deep links under the repo)
   // Examples:
@@ -81,7 +89,7 @@ export function validateRepoUrl(url: string): { valid: boolean; error?: string }
   if (!httpsPattern.test(trimmedUrl) && !sshPattern.test(trimmedUrl)) {
     return {
       valid: false,
-      error: 'Invalid repository URL. Must be a valid GitHub URL (e.g., https://github.com/org/repo or /tree/main/...)'
+      error: 'Invalid input. Use a GitHub URL or npm/npx command (e.g., npx pkg, npm i pkg).'
     };
   }
 

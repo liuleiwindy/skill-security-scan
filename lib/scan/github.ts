@@ -13,7 +13,13 @@ export type RepoFetchErrorCode =
   | "github_rate_limited"
   | "repo_access_limited"
   | "repo_fetch_failed"
-  | "scan_timeout";
+  | "scan_timeout"
+  | "invalid_package_input"
+  | "npm_package_not_found"
+  | "npm_tarball_too_large"
+  | "npm_extracted_files_exceeded"
+  | "npm_extracted_file_too_large"
+  | "npm_fetch_failed";
 
 export class RepoFetchError extends Error {
   code: RepoFetchErrorCode;
@@ -34,6 +40,7 @@ export interface GitHubRepoRef {
 export interface GitHubFetchOptions extends ScanOptions {
   timeoutMs?: number;
   maxFileBytes?: number;
+  subPaths?: string[];
 }
 
 export interface GitHubFetchResult {
@@ -200,16 +207,28 @@ export async function fetchGitHubRepoFiles(
     includeExtensions: options.includeExtensions ?? DEFAULT_SCAN_OPTIONS.includeExtensions ?? [],
     excludeDirs: options.excludeDirs ?? DEFAULT_SCAN_OPTIONS.excludeDirs ?? [],
   };
+  const deadline = Date.now() + timeoutMs;
+  const remainingTimeoutMs = () => {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) {
+      throw new RepoFetchError("scan_timeout", `Scan timed out after ${timeoutMs}ms`);
+    }
+    return remaining;
+  };
+
+  const normalizedSubPaths = (options.subPaths || [])
+    .map((subPath) => subPath.trim().replace(/^\/+|\/+$/g, ""))
+    .filter(Boolean);
 
   const parsed = parseGitHubRepoUrl(repoUrl);
   const repoMeta = await fetchJson<{ default_branch: string }>(
     `https://api.github.com/repos/${parsed.owner}/${parsed.repo}`,
-    timeoutMs,
+    remainingTimeoutMs(),
   );
   const ref = parsed.ref || repoMeta.default_branch;
   const treePayload = await fetchJson<{ tree?: GitHubTreeItem[] }>(
     `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/git/trees/${encodeURIComponent(ref)}?recursive=1`,
-    timeoutMs,
+    remainingTimeoutMs(),
   );
   if (!Array.isArray(treePayload.tree)) {
     throw new RepoFetchError("repo_fetch_failed", "Repository tree response is invalid");
@@ -218,6 +237,11 @@ export async function fetchGitHubRepoFiles(
   const candidateBlobs = treePayload.tree
     .filter((item) => item.type === "blob")
     .filter((item) => {
+      if (normalizedSubPaths.length > 0) {
+        return normalizedSubPaths.some(
+          (subPath) => item.path === subPath || item.path.startsWith(`${subPath}/`),
+        );
+      }
       if (!parsed.subPath) return true;
       return item.path === parsed.subPath || item.path.startsWith(`${parsed.subPath}/`);
     })
@@ -253,7 +277,7 @@ export async function fetchGitHubRepoFiles(
     }
     let content: string | null;
     try {
-      content = await fetchBlobUtf8(parsed.owner, parsed.repo, item.sha, timeoutMs);
+      content = await fetchBlobUtf8(parsed.owner, parsed.repo, item.sha, remainingTimeoutMs());
     } catch (error) {
       if ((error as { code?: string } | undefined)?.code === "repo_fetch_failed") {
         filesSkipped += 1;

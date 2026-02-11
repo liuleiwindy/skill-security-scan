@@ -3,7 +3,7 @@
 ## 0. Meta
 
 - Date: 2026-02-11
-- Stage: Active (Implementation-ready)
+- Stage: Released
 - Owner: Product + Engineering
 - Parent proposal: `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/specs/proposals/2026-02-11-security-scan-real-v0.2.md`
 - Parent release: `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/specs/released/2026-02-11-security-scan-real-v0.2.1.md`

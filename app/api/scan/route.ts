@@ -63,15 +63,21 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof RepoFetchError) {
       const statusCode =
-        error.code === "repo_not_found"
+        error.code === "repo_not_found" || error.code === "npm_package_not_found"
           ? 404
           : error.code === "repo_private" || error.code === "repo_access_limited"
             ? 403
             : error.code === "github_rate_limited"
               ? 429
-              : error.code === "scan_timeout"
-                ? 408
-                : 502;
+              : error.code === "invalid_package_input"
+                ? 400
+                : error.code === "npm_tarball_too_large" ||
+                    error.code === "npm_extracted_files_exceeded" ||
+                    error.code === "npm_extracted_file_too_large"
+                  ? 413
+                  : error.code === "scan_timeout"
+                    ? 408
+                    : 502;
       return createErrorResponse(
         {
           error: error.code,

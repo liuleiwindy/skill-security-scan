@@ -32,6 +32,8 @@ export interface ScanReport {
     filesScanned?: number;
     filesSkipped?: number;
     timeoutMs?: number;
+    packageName?: string;
+    packageVersion?: string;
   };
 }
 
@@ -203,7 +205,7 @@ export function runScan(
     status: scoreResult.status,
     summary: scoreResult.summary,
     findings: allFindings,
-    engineVersion: 'v0.2.1',
+    engineVersion: 'v0.2.2',
     scannedAt,
   };
 
@@ -237,7 +239,7 @@ export function runScanOnFile(
     status: scoreResult.status,
     summary: scoreResult.summary,
     findings,
-    engineVersion: 'v0.2.1',
+    engineVersion: 'v0.2.2',
     scannedAt,
   };
 }

@@ -19,6 +19,15 @@ describe("api routes", () => {
         filesSkipped: 0,
         cleanup: async () => {},
       }),
+      fetchNpmFiles: async () => ({
+        files: [{ path: "src/index.ts", content: "export const value = 1;\n" }],
+        workspaceDir: "/tmp/mock-npm-scan",
+        filesSkipped: 0,
+        packageName: "demo-pkg",
+        packageVersion: "1.0.0",
+        cleanup: async () => {},
+      }),
+      resolveSkillsAddGitHub: async () => null,
       runSemgrep: async () => ({
         findings: [
           {
@@ -69,7 +78,7 @@ describe("api routes", () => {
     expect(reportResp.status).toBe(200);
     const report = (await reportResp.json()) as { id: string; engineVersion: string; findings: unknown[] };
     expect(report.id).toBe(payload.scanId);
-    expect(report.engineVersion).toBe("v0.2.1");
+    expect(report.engineVersion).toBe("v0.2.2");
     expect(report.findings.length).toBeGreaterThan(0);
 
     const posterResp = await getPoster(
@@ -108,6 +117,140 @@ describe("api routes", () => {
     expect(res.status).toBe(404);
     const payload = (await res.json()) as { error: string };
     expect(payload.error).toBe("repo_not_found");
+  });
+
+  it("accepts npm command input and sets npm scan meta source", async () => {
+    const req = new Request("http://localhost/api/scan", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ repoUrl: "npm i demo-pkg" }),
+    });
+    const created = await createScan(req as any);
+    expect(created.status).toBe(200);
+    const payload = (await created.json()) as { scanId: string };
+
+    const reportResp = await getScan({} as any, { params: Promise.resolve({ id: payload.scanId }) });
+    expect(reportResp.status).toBe(200);
+    const report = (await reportResp.json()) as { scanMeta?: { source?: string; packageName?: string } };
+    expect(report.scanMeta?.source).toBe("npm_registry");
+    expect(report.scanMeta?.packageName).toBe("demo-pkg");
+  });
+
+  it("maps npm limit failures to 413", async () => {
+    __setScanRuntimeDepsForTest({
+      fetchNpmFiles: async () => {
+        throw new RepoFetchError("npm_extracted_file_too_large", "too large");
+      },
+    });
+
+    const req = new Request("http://localhost/api/scan", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ repoUrl: "npx demo-pkg" }),
+    });
+    const res = await createScan(req as any);
+    expect(res.status).toBe(413);
+    const payload = (await res.json()) as { error: string };
+    expect(payload.error).toBe("npm_extracted_file_too_large");
+  });
+
+  it("maps npm package not found to 404", async () => {
+    __setScanRuntimeDepsForTest({
+      fetchNpmFiles: async () => {
+        throw new RepoFetchError("npm_package_not_found", "missing");
+      },
+    });
+
+    const req = new Request("http://localhost/api/scan", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ repoUrl: "npm i missing-pkg" }),
+    });
+    const res = await createScan(req as any);
+    expect(res.status).toBe(404);
+    const payload = (await res.json()) as { error: string };
+    expect(payload.error).toBe("npm_package_not_found");
+  });
+
+  it("routes npx skills add owner/repo to github intake with dynamic subpaths", async () => {
+    let capturedRepoUrl: string | null = null;
+    let capturedSubPaths: string[] | null = null;
+    let capturedTimeoutMs: number | undefined;
+    __setScanRuntimeDepsForTest({
+      resolveSkillsAddGitHub: async () => ({
+        repoUrl: "https://github.com/pytorch/pytorch",
+        skillRoots: [".claude/skills"],
+      }),
+      fetchRepoFiles: async (repoUrl, options) => {
+        capturedRepoUrl = repoUrl;
+        capturedSubPaths = options?.subPaths || null;
+        capturedTimeoutMs = options?.timeoutMs;
+        return {
+          files: [{ path: ".claude/skills/a/SKILL.md", content: "name: a\ndescription: b\n" }],
+          workspaceDir: "/tmp/mock-github-scan",
+          filesSkipped: 0,
+          cleanup: async () => {},
+        };
+      },
+      fetchNpmFiles: async () => {
+        throw new Error("should not use npm intake for skills add repo target");
+      },
+    });
+
+    const req = new Request("http://localhost/api/scan", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ repoUrl: "npx skills add pytorch/pytorch" }),
+    });
+    const res = await createScan(req as any);
+    expect(res.status).toBe(200);
+    const payload = (await res.json()) as { scanId: string };
+
+    expect(capturedRepoUrl).toBe("https://github.com/pytorch/pytorch");
+    expect(capturedSubPaths).toEqual([".claude/skills"]);
+    expect(capturedTimeoutMs).toBe(45000);
+
+    const reportResp = await getScan({} as any, { params: Promise.resolve({ id: payload.scanId }) });
+    const report = (await reportResp.json()) as { repoUrl: string; scanMeta?: { source?: string } };
+    expect(report.repoUrl).toBe("https://github.com/pytorch/pytorch");
+    expect(report.scanMeta?.source).toBe("github_api");
+  });
+
+  it("caps dynamic skill roots for skills add source", async () => {
+    let capturedSubPaths: string[] | null = null;
+    __setScanRuntimeDepsForTest({
+      resolveSkillsAddGitHub: async () => ({
+        repoUrl: "https://github.com/acme/huge-skill-repo",
+        skillRoots: [
+          "z/deep/path",
+          "a",
+          ...Array.from({ length: 30 }).map((_, i) => `skills/group-${i}/tool`),
+        ],
+      }),
+      fetchRepoFiles: async (_repoUrl, options) => {
+        capturedSubPaths = options?.subPaths || null;
+        return {
+          files: [{ path: "a/SKILL.md", content: "name: a\ndescription: b\n" }],
+          workspaceDir: "/tmp/mock-github-scan",
+          filesSkipped: 0,
+          cleanup: async () => {},
+        };
+      },
+      fetchNpmFiles: async () => {
+        throw new Error("should not use npm intake for skills add repo target");
+      },
+    });
+
+    const req = new Request("http://localhost/api/scan", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ repoUrl: "npx skills add acme/huge-skill-repo" }),
+    });
+    const res = await createScan(req as any);
+    expect(res.status).toBe(200);
+    expect(capturedSubPaths).not.toBeNull();
+    expect((capturedSubPaths || []).length).toBe(20);
+    expect(capturedSubPaths?.[0]).toBe("a");
   });
 
   it("builds poster qrUrl from forwarded host headers", async () => {

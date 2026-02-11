@@ -60,18 +60,18 @@ export default function ScanPage() {
   return (
     <main className={styles.page}>
       <section className={styles.card}>
-        <p className={styles.badge}>Security Scan v0.2.1</p>
+        <p className={styles.badge}>Security Scan v0.2.2</p>
         <h1 className={styles.title}>Scan Your Skill Repo</h1>
         <p className={styles.subtitle}>
-          Paste a GitHub repo URL to generate a shareable security report and poster.
+          Paste a GitHub URL, or npm/npx command, to generate a shareable security report and poster.
         </p>
         <p style={{ fontSize: '0.875rem', color: '#94a3b8', marginTop: '0.5rem', textAlign: 'center' }}>
-          v0.2.1: Real GitHub repository scan with integrated external scanners.
+          v0.2.2: Real GitHub + npm package scan with integrated external scanners.
         </p>
         <form onSubmit={onSubmit} className={styles.form}>
           <input
             className={styles.input}
-            placeholder="https://github.com/org/repo"
+            placeholder="https://github.com/org/repo or npx create-next-app@14"
             value={repoUrl}
             onChange={(e) => setRepoUrl(e.target.value)}
             required

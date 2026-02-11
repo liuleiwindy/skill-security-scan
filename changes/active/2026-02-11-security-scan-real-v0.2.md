@@ -6,6 +6,8 @@
 - `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/docs/v0.2-implementation-playbook.md`
 - `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/specs/released/2026-02-11-security-scan-real-v0.2.1.md`
 - `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/docs/v0.2.1-implementation-playbook.md`
+- `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/specs/released/2026-02-11-security-scan-real-v0.2.2.md`
+- `/Users/lei_liu/Documents/Code/skill-store/skill-security-scan/docs/v0.2.2-implementation-playbook.md`
 
 ## 1. Execution Status
 
@@ -32,7 +34,7 @@
      - authenticated GitHub mode via `GITHUB_TOKEN`
 
 3. `v0.2.2` npm/npx input scanning
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - input parser for repo URL vs install command
      - npm registry metadata + tarball intake
