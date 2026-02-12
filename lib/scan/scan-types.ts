@@ -46,3 +46,31 @@ export interface MockFile {
   path: string;
   content: string;
 }
+
+/**
+ * Stable domain error codes for scanner failures (v0.2.3.4)
+ * Public-safe codes that don't leak provider-specific internal errors.
+ */
+export type ScannerErrorCode =
+  | "scanner_not_available"
+  | "scanner_timeout"
+  | "scanner_exec_failed"
+  | "scanner_invalid_output"
+  | "scanner_network_error";
+
+/**
+ * Scanner execution status (v0.2.3.4)
+ */
+export type ScannerExecutionStatus = "ok" | "failed" | "skipped" | "fallback";
+
+/**
+ * Scanner metadata entry in scanMeta (v0.2.3.4)
+ * Additive field providing runtime observability for each scanner.
+ */
+export interface ScannerExecution {
+  name: "semgrep" | "gitleaks" | "pi-external" | "pi-local";
+  status: ScannerExecutionStatus;
+  findings: number;
+  errorCode?: ScannerErrorCode;
+  message?: string;
+}

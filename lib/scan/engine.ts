@@ -11,10 +11,10 @@
 
 import { runAllRules, Finding } from './rules';
 import { calculateScoreResult } from './scoring';
-import { ExternalPIOrchestrator, ExternalPIResult, externalResultToFinding } from './external-pi-adapter';
-import { PromptfooDetector } from './external-pi-detectors/promptfoo-detector';
+import { externalResultToFinding } from './external-pi-adapter';
 import { DEFAULT_SCAN_OPTIONS } from './scan-policy';
 import type { MockFile, ScanOptions } from './scan-types';
+import { runExternalPIDetection } from './pi-pipeline';
 export type { MockFile } from './scan-types';
 
 export interface ScanReport {
@@ -39,6 +39,14 @@ export interface ScanReport {
     timeoutMs?: number;
     packageName?: string;
     packageVersion?: string;
+    /** V0.2.3.4: Additive scanner execution metadata */
+    scanners?: Array<{
+      name: "semgrep" | "gitleaks" | "pi-external" | "pi-local";
+      status: "ok" | "failed" | "skipped" | "fallback";
+      findings: number;
+      errorCode?: "scanner_not_available" | "scanner_timeout" | "scanner_exec_failed" | "scanner_invalid_output" | "scanner_network_error";
+      message?: string;
+    }>;
   };
 }
 
@@ -113,30 +121,83 @@ export async function runScan(
     .filter(f => shouldIncludeFile(f.path, opts))
     .slice(0, opts.maxFiles || DEFAULT_SCAN_OPTIONS.maxFiles!);
 
-  // Initialize external PI orchestrator with available detectors
-  const piOrchestrator = new ExternalPIOrchestrator({
-    enableExternal: opts.enableExternalPI ?? true,
-    fallbackToLocal: opts.fallbackToLocal ?? true,
-    detectors: [new PromptfooDetector()], // Register available detector(s)
-  });
+  // V0.2.3.4: Use pi-pipeline helper instead of direct detector registration
+  // Track scanner metadata across all files (accumulate findings, merge status by priority)
+  // V0.2.3.4: Aggregate PI findings across all files
+  let totalPIFindings = 0;
+  // Status priority (risk-first): failed > fallback > ok > skipped
+  const statusPriority: Record<string, number> = { failed: 4, fallback: 3, ok: 2, skipped: 1 };
+  let highestPriorityStatus: "ok" | "failed" | "fallback" | "skipped" | null = null;
+  let firstNonOkError: { errorCode?: string; message?: string } | null = null;
 
   const allFindings: Finding[] = [];
 
   for (const file of filesToScan) {
-    let externalResult: ExternalPIResult = {
+    // V0.2.3.4: Use pi-pipeline helper for external PI detection
+    // Temporary interface for compatibility
+    let externalResult: {
+      detected: boolean;
+      method: 'external' | 'local';
+      ruleId?: 'PI-1-INSTRUCTION-OVERRIDE' | 'PI-2-PROMPT-SECRET-EXFIL';
+      snippet?: string;
+      line?: number;
+      error?: string;
+    } = {
       detected: false,
       method: 'local',
     };
 
     // External PI detection must never block baseline local scanning.
     try {
-      externalResult = await piOrchestrator.detect(file.content, file.path);
+      const piResult = await runExternalPIDetection(file.content, file.path, {
+        enableExternal: opts.enableExternalPI,
+        fallbackToLocal: opts.fallbackToLocal,
+      });
+
+      // V0.2.3.4: Accumulate PI findings across all files
+      totalPIFindings += piResult.findings;
+
+      // V0.2.3.4: Track highest priority status across all files
+      if (!highestPriorityStatus || statusPriority[piResult.status] > statusPriority[highestPriorityStatus]) {
+        highestPriorityStatus = piResult.status;
+      }
+
+      // Track first non-ok error for diagnostic context
+      if (piResult.status !== 'ok' && !firstNonOkError) {
+        firstNonOkError = {
+          errorCode: piResult.errorCode,
+          message: piResult.message,
+        };
+      }
+
+      // Convert PI pipeline result to external result format for compatibility
+      externalResult = {
+        detected: piResult.findings > 0,
+        method: piResult.method,
+        ruleId: piResult.ruleId,
+        snippet: piResult.snippet,
+        line: piResult.line,
+        error: piResult.message,
+      };
+
+      // Convert to finding if detected
       const externalFinding = externalResultToFinding(externalResult, file.path);
       if (externalFinding) {
         allFindings.push(externalFinding);
       }
     } catch (error) {
       console.warn(`Failed to run external PI detection on ${file.path}, falling back to local rules:`, error);
+
+      // Track failed status for error case
+      if (!highestPriorityStatus || statusPriority.failed > statusPriority[highestPriorityStatus]) {
+        highestPriorityStatus = 'failed';
+      }
+      if (!firstNonOkError) {
+        firstNonOkError = {
+          errorCode: 'scanner_exec_failed',
+          message: error instanceof Error ? error.message.substring(0, 200) : 'Unknown error',
+        };
+      }
     }
 
     try {
@@ -159,6 +220,24 @@ export async function runScan(
   // Calculate score
   const scoreResult = calculateScoreResult(allFindings);
 
+  // V0.2.3.4: Build aggregated PI scanner metadata
+  const scannersMetadata = [];
+  if (highestPriorityStatus) {
+    // Determine scanner name based on status
+    // - If status is 'ok', we used external method
+    // - If status is 'fallback', we fell back to local
+    // - If status is 'failed', could be either (use 'pi-local' as safe default)
+    const scannerName: "pi-external" | "pi-local" = highestPriorityStatus === 'ok' ? 'pi-external' : 'pi-local';
+
+    scannersMetadata.push({
+      name: scannerName,
+      status: highestPriorityStatus,
+      findings: totalPIFindings,
+      errorCode: firstNonOkError?.errorCode as ("scanner_not_available" | "scanner_timeout" | "scanner_exec_failed" | "scanner_invalid_output" | "scanner_network_error" | undefined),
+      message: firstNonOkError?.message,
+    });
+  }
+
   // Build report
   const report: ScanReport = {
     id: scanId,
@@ -170,6 +249,10 @@ export async function runScan(
     findings: allFindings,
     engineVersion: 'v0.2.3', // Updated version
     scannedAt,
+    scanMeta: {
+      // V0.2.3.4: Additive scanner metadata with aggregated PI status
+      scanners: scannersMetadata.length > 0 ? scannersMetadata : undefined,
+    },
   };
 
   return report;
