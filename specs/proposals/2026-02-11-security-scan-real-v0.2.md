@@ -26,7 +26,7 @@ V0.2 is delivered in staged sub-versions:
 
 1. `v0.2.1` - GitHub intake + mature scanners (Semgrep + Gitleaks) + authenticated GitHub API mode
 2. `v0.2.2` - npm/npx input scanning (scan from package/install command, not only repo URL)
-3. `v0.2.3` - Prompt-injection and agent-risk static detection
+3. `v0.2.3` - Prompt-injection detection (external-first, local fallback)
 4. `v0.2.4` - Quality/performance/false-positive governance (pending detailed planning)
 
 Sub-spec links:
@@ -67,10 +67,10 @@ V0.2 rule families:
 2. External scanner findings (introduced in `v0.2.1`)
    - Semgrep findings (SAST)
    - Gitleaks findings (secrets)
-3. New Skill/Agent specific static rules (introduced in `v0.2.3`)
-   - prompt injection indicators in `SKILL.md`, prompt/config templates
-   - excessive agency indicators (dangerous tool exposure without constraints)
-   - model output-to-execution unsafe chaining patterns
+3. Prompt-injection coverage (introduced in `v0.2.3`)
+   - PI-1 instruction override
+   - PI-2 prompt/secret exfiltration
+   - external tooling priority, local deterministic fallback
 
 ### 4.3 npm/npx Input Intake (V0.2.2)
 

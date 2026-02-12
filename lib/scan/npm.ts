@@ -99,14 +99,17 @@ function looksLikePreRelease(version: string): boolean {
   return version.includes("-");
 }
 
-function includeFileByScanOptions(filePath: string, options: Required<ScanOptions>): boolean {
+function includeFileByScanOptions(filePath: string, options: ScanOptions): boolean {
+  const excludeDirs = options.excludeDirs ?? [];
+  const includeExtensions = options.includeExtensions ?? [];
+
   const pathParts = filePath.split("/");
   for (const part of pathParts) {
-    if (options.excludeDirs.includes(part)) {
+    if (excludeDirs.includes(part)) {
       return false;
     }
   }
-  return options.includeExtensions.some((ext) => filePath.endsWith(ext));
+  return includeExtensions.some((ext) => filePath.endsWith(ext));
 }
 
 function tokenizeCommand(input: string): string[] {
@@ -512,10 +515,12 @@ export async function fetchNpmPackageFiles(input: string, options: NpmFetchOptio
   const maxTarballBytes = options.maxTarballBytes ?? DEFAULT_MAX_TARBALL_BYTES;
   const maxExtractedFiles = options.maxExtractedFiles ?? DEFAULT_MAX_EXTRACTED_FILES;
   const maxFileBytes = options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES;
-  const normalizedOptions: Required<ScanOptions> = {
+  const normalizedOptions: ScanOptions = {
     maxFiles: options.maxFiles ?? DEFAULT_SCAN_OPTIONS.maxFiles ?? 100,
     includeExtensions: options.includeExtensions ?? DEFAULT_SCAN_OPTIONS.includeExtensions ?? [],
     excludeDirs: options.excludeDirs ?? DEFAULT_SCAN_OPTIONS.excludeDirs ?? [],
+    enableExternalPI: DEFAULT_SCAN_OPTIONS.enableExternalPI ?? true,
+    fallbackToLocal: DEFAULT_SCAN_OPTIONS.fallbackToLocal ?? true,
   };
 
   const deadline = Date.now() + timeoutMs;
@@ -581,7 +586,7 @@ export async function fetchNpmPackageFiles(input: string, options: NpmFetchOptio
       await fs.mkdir(path.dirname(targetPath), { recursive: true });
       await fs.writeFile(targetPath, content, "utf8");
 
-      if (files.length >= normalizedOptions.maxFiles) {
+      if (normalizedOptions.maxFiles && files.length >= normalizedOptions.maxFiles) {
         break;
       }
     }

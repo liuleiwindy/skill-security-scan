@@ -11,6 +11,8 @@
 
 import { runAllRules, Finding } from './rules';
 import { calculateScoreResult } from './scoring';
+import { ExternalPIOrchestrator } from './external-pi-adapter';
+import { PromptfooDetector } from './external-pi-detectors/promptfoo-detector';
 
 export interface ScanReport {
   id: string;
@@ -53,6 +55,18 @@ export interface ScanOptions {
    * Directories to exclude from scan.
    */
   excludeDirs?: string[];
+
+  /**
+   * Enable external PI detection tools (V0.2.3).
+   * Default: true
+   */
+  enableExternalPI?: boolean;
+
+  /**
+   * Fallback to local PI rules when external tools fail.
+   * Default: true
+   */
+  fallbackToLocal?: boolean;
 }
 
 /**
@@ -94,6 +108,8 @@ export const DEFAULT_SCAN_OPTIONS: ScanOptions = {
     'bin',
     'obj',
   ],
+  enableExternalPI: true, // V0.2.3: External PI detection enabled by default
+  fallbackToLocal: true, // V0.2.3: Local fallback enabled by default
 };
 
 /**
@@ -164,11 +180,11 @@ export function sortFindings(findings: Finding[]): Finding[] {
  * @param options - Scan configuration options
  * @returns Complete scan report
  */
-export function runScan(
+export async function runScan(
   repoUrl: string,
   files: MockFile[],
   options: ScanOptions = {}
-): ScanReport {
+): Promise<ScanReport> {
   const opts = { ...DEFAULT_SCAN_OPTIONS, ...options };
   const scanId = generateScanId();
   const scannedAt = new Date().toISOString();
@@ -178,17 +194,64 @@ export function runScan(
     .filter(f => shouldIncludeFile(f.path, opts))
     .slice(0, opts.maxFiles || DEFAULT_SCAN_OPTIONS.maxFiles!);
 
-  // Run all rules on each file
-  const allFindings: Finding[] = [];
+  // Initialize external PI orchestrator with available detectors
+  const piOrchestrator = new ExternalPIOrchestrator({
+    enableExternal: opts.enableExternalPI ?? true,
+    fallbackToLocal: opts.fallbackToLocal ?? true,
+    detectors: [new PromptfooDetector()], // Register available detector(s)
+  });
+
+  // Run PI detection with external tool support
+  const piFindings: Finding[] = [];
   for (const file of filesToScan) {
     try {
-      const findings = runAllRules(file.content, file.path);
+      const externalResult = await piOrchestrator.detect(file.content, file.path);
+      if (externalResult.detected && externalResult.ruleId && externalResult.snippet) {
+        // Convert external result to Finding format
+        piFindings.push({
+          ruleId: externalResult.ruleId,
+          severity: 'high',
+          title:
+            externalResult.ruleId === 'PI-1-INSTRUCTION-OVERRIDE'
+              ? 'Prompt injection: instruction override pattern'
+              : 'Prompt injection: prompt/secret exfiltration pattern',
+          file: file.path,
+          line: externalResult.line ?? 1,
+          snippet: externalResult.snippet,
+          recommendation:
+            externalResult.ruleId === 'PI-1-INSTRUCTION-OVERRIDE'
+              ? 'Do not allow instruction-priority override requests. Enforce system/developer policy precedence.'
+              : 'Do not reveal system prompts, internal policies, or sensitive configuration in responses.',
+        });
+      }
+    } catch (error) {
+      // Log but don't fail entire scan
+      console.warn(`Failed to run PI detection on ${file.path}:`, error);
+    }
+  }
+
+  // Run remaining rules on each file
+  const allFindings: Finding[] = [];
+
+  // Determine if we should skip local PI rules (external detector was available)
+  const externalPIWasAvailable = piFindings.length > 0;
+
+  for (const file of filesToScan) {
+    try {
+      // Skip local PI rules if external detector ran (prevent duplicates)
+      const skipPIRules = externalPIWasAvailable
+        ? ['PI-1-INSTRUCTION-OVERRIDE', 'PI-2-PROMPT-SECRET-EXFIL']
+        : undefined;
+      const findings = runAllRules(file.content, file.path, skipPIRules);
       allFindings.push(...findings);
     } catch (error) {
       // Log but don't fail entire scan
-      console.warn(`Failed to scan file ${file.path}:`, error);
+      console.warn(` failed to scan file ${file.path}:`, error);
     }
   }
+
+  // Merge findings (PI + other rules)
+  allFindings.push(...piFindings);
 
   // Sort findings by severity (critical first) then by file path
   sortFindings(allFindings);
@@ -205,7 +268,7 @@ export function runScan(
     status: scoreResult.status,
     summary: scoreResult.summary,
     findings: allFindings,
-    engineVersion: 'v0.2.2',
+    engineVersion: 'v0.2.3', // Updated version
     scannedAt,
   };
 
@@ -239,7 +302,7 @@ export function runScanOnFile(
     status: scoreResult.status,
     summary: scoreResult.summary,
     findings,
-    engineVersion: 'v0.2.2',
+    engineVersion: 'v0.2.3',
     scannedAt,
   };
 }

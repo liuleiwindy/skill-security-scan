@@ -40,12 +40,13 @@
      - npm registry metadata + tarball intake
      - tarball extraction + scan pipeline reuse
 
-4. `v0.2.3` Prompt-injection and agent-risk rules
+4. `v0.2.3` Prompt-injection integration (external-first)
    - Status: pending
    - Deliverables:
-     - prompt injection indicator rules and evidence output
-     - excessive agency/static tool misuse rules
-     - model output-to-exec risk rules
+     - prompt-injection findings for PI-1/PI-2
+     - external tool first (promptfoo online path)
+     - local deterministic rules fallback only
+     - no non-PI architecture refactor
 
 5. `v0.2.4` Quality and hardening (pending planning)
    - Status: pending
@@ -81,9 +82,10 @@
 3. M3 (`v0.2.2`) - npm/npx intake coverage
    - Done when:
      - install-command input can produce scan reports through shared pipeline
-4. M4 (`v0.2.3`) - Agent risk coverage
+4. M4 (`v0.2.3`) - Prompt-injection coverage
    - Done when:
-     - at least 3 new prompt/agent rules can trigger deterministic findings
+     - PI-1/PI-2 findings are available in reports
+     - external path is primary, fallback path works on failure
 5. M5 (`v0.2.4`) - Quality and reliability baseline
    - Done when:
      - timeout/rate-limit/error contract paths are covered by tests

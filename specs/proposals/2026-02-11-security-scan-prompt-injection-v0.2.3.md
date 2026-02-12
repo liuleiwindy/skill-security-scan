@@ -2,108 +2,116 @@
 
 ## 0. Meta
 
-- Date: 2026-02-11
-- Stage: Proposal (Review-ready)
+- Date: 2026-02-12
+- Stage: Proposal (Revised)
 - Owner: Product + Engineering
 - Parent proposal: `specs/proposals/2026-02-11-security-scan-real-v0.2.md`
 - Previous release baseline: `specs/released/2026-02-11-security-scan-real-v0.2.2.md`
 
 ## 1. Problem Statement
 
-Current versions can scan repository risks and produce useful findings, but the report does not explicitly answer one high-impact trust question:
+Current versions already have a working repository scan pipeline, but they still miss one explicit trust signal:
 
-`Does this skill contain prompt-injection patterns that may mislead model behavior or extract hidden instructions/secrets?`
+`Does this skill contain prompt-injection risk?`
 
-For both users and developers, this gap makes "can I trust this skill?" decisions slower and less consistent.
+At the same time, implementation direction must avoid reinventing detection primitives already available in external tooling.
 
 ## 2. Goal (V0.2.3)
 
-Add a focused Prompt Injection risk capability with minimal product surface change:
+Add prompt-injection risk scanning in the existing product flow, with external tools as primary detectors and local rules only as fallback:
 
-`existing scan flow -> detect prompt-injection indicators -> show clear risk signal in report`
-
-This version is intentionally small: one new risk domain, no role system expansion.
+`existing scan flow -> cloud/external prompt-injection checks -> fallback local checks (if unavailable) -> report risk signal`
 
 ## 3. Non-Goals (V0.2.3)
 
-1. No role-based product architecture (defer to v0.3+).
-2. No developer verification/paywall flow.
-3. No broad agent-risk bundle beyond prompt injection.
-4. No scoring model redesign.
-5. No major report/poster layout redesign.
+1. No role split UI in this version.
+2. No developer verification/paywall mechanics.
+3. No broader agent-risk family rollout.
+4. No scoring-system redesign.
+5. No route/schema breaking change.
 
 ## 4. Scope
 
 ### 4.1 Risk Standard
 
-Use OWASP LLM01 (Prompt Injection) as the alignment baseline, with two product-facing classes:
+Use OWASP LLM01 alignment with two locked classes:
 
 1. `PI-1` Instruction Override
-   - Attempts to ignore, override, or bypass existing system/developer instructions.
 2. `PI-2` Prompt/Secret Exfiltration
-   - Attempts to reveal system prompt, hidden policy text, or sensitive internal instructions/secrets.
 
-### 4.2 User Interaction Contract
+### 4.2 Detection Strategy (Priority Order)
 
-Keep current flow unchanged:
+1. Primary: external/cloud-based prompt-injection evaluation tooling.
+2. Fallback: existing deterministic local PI rules when cloud path is unavailable.
+3. "Unavailable" includes missing credentials, provider/network failure, timeout, or tool-not-available conditions.
 
-1. Input repository URL/scan target
-2. Run scan
-3. Show report
-4. Open poster
+### 4.3 External Provider Requirement
 
-Report requirement:
+For this project, external online evaluation must support Z.AI large model service through OpenAI-compatible API mode.
 
-1. If matched: clearly show prompt-injection risk present.
-2. If not matched: clearly show no obvious prompt-injection signal detected.
+1. Provider mode: `openai`-compatible client path via `promptfoo`.
+2. Required runtime env:
+   - `ZAI_API_KEY`
+   - optional `ZAI_API_BASE_URL` (default project value should point to Z.AI OpenAI-compatible endpoint)
+3. Online config must be isolated from runtime code config files.
 
-### 4.3 Report Output Delta
+### 4.4 User Interaction Contract
 
-Add prompt-injection findings under existing findings model without schema break:
+Keep current product interaction unchanged:
 
-1. Reuse finding fields (`ruleId`, `severity`, `title`, `file`, `line`, `snippet`, `recommendation`).
-2. Add rule IDs under prompt-injection namespace (PI-1/PI-2 mapped IDs).
-3. Keep API route and page route contracts unchanged.
+1. input scan target
+2. run scan
+3. open report
+4. open poster
 
-### 4.4 Validation Strategy (Avoid Reinventing)
+Prompt-injection is an additional finding domain in report output, not a new page or route.
 
-1. Primary detection remains inside existing scanner rule pipeline.
-2. Use `promptfoo` as external validation/regression reference for prompt-injection coverage.
-3. Do not integrate additional runtime-defense tools in this version.
+### 4.5 Report Output Contract
+
+Keep existing finding schema unchanged:
+
+1. `ruleId`
+2. `severity`
+3. `title`
+4. `file`
+5. `line`
+6. `snippet`
+7. `recommendation`
+
+Only add PI findings under this existing schema.
 
 ## 5. Acceptance Criteria (V0.2.3)
 
-1. Prompt-injection risk can be detected and surfaced in report output.
-2. Both classes (`PI-1`, `PI-2`) have at least one positive fixture.
-3. At least one clean fixture produces no prompt-injection finding.
-4. Existing scan/report/poster flow remains functional without route changes.
-5. No regression on existing v0.2.2 baseline test suite.
+1. Prompt-injection findings are visible in report output when PI scenarios hit.
+2. PI classes are limited to `PI-1` and `PI-2`.
+3. External tool path is attempted first for PI detection.
+4. Local PI rules execute only when external path is unavailable.
+5. Existing `/scan -> /scan/report/:id -> /scan/poster/:id` flow remains intact.
+6. Existing baseline tests remain green.
 
 ## 6. Risks and Mitigations
 
-1. Risk: False positives on generic prompt text.
-   Mitigation: keep rule wording precise and evidence-focused.
+1. Risk: External service instability.
+   Mitigation: strict local fallback path with deterministic local PI rules.
 
-2. Risk: Scope creep into broader agent behavior governance.
-   Mitigation: lock scope to prompt injection only in v0.2.3.
+2. Risk: Confusion about "no hit" meaning.
+   Mitigation: keep current static-scan disclaimer language.
 
-3. Risk: User confusion between "no signal" and "fully safe."
-   Mitigation: keep static-scan disclaimer unchanged.
+3. Risk: Scope creep into broader governance.
+   Mitigation: lock v0.2.3 to PI-only domain and existing UI flow.
 
 ## 7. Decisions Locked for V0.2.3
 
-1. Only prompt-injection risk is in scope.
-2. Only two classes are tracked: `PI-1` and `PI-2`.
-3. No role split and no paywall mechanics in this version.
-4. `promptfoo` is used as validation aid, not as a hard runtime dependency.
-5. Local context window for co-occurrence matching is fixed at ±2 lines (5-line total window).
-6. `snippet` max length is fixed at 200 characters.
+1. External/cloud PI evaluation is primary.
+2. Local PI rules are fallback-only.
+3. Z.AI OpenAI-compatible mode is supported for online provider path.
+4. No role/paywall expansion in v0.2.3.
+5. No API contract break.
 
 ## 8. Next Step in OpenSpec Flow
 
 After proposal approval:
 
-1. Create active spec:
-   - `specs/active/2026-02-11-security-scan-prompt-injection-v0.2.3.md`
-2. Execute implementation and validation.
-3. Promote to `specs/released/` after acceptance gate passes.
+1. update active spec to match this detection priority contract
+2. implement only PI integration delta on top of existing pipeline
+3. promote to `specs/released/` after acceptance criteria pass

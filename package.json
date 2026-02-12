@@ -1,6 +1,7 @@
 {
   "name": "security-scan-site",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,7 +10,9 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:promptfoo": "HOME=/tmp promptfoo eval tests/promptfoo/prompt-injection.config.yaml",
+    "scan:external": "node lib/scan/external-pi-detectors/cli.cjs"
   },
   "dependencies": {
     "@vercel/postgres": "^0.10.0",

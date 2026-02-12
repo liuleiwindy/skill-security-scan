@@ -191,7 +191,7 @@ export async function createAndStoreReport(repoUrl: string): Promise<ScanReport>
         );
   const npmIntake: NpmFetchResult | null = effectiveKind === "npm_command" ? (intake as NpmFetchResult) : null;
   try {
-    const internalReport = runScan(skillsGitHubTarget?.repoUrl || repoUrl, intake.files);
+    const internalReport = await runScan(skillsGitHubTarget?.repoUrl || repoUrl, intake.files);
     const [semgrepResult, gitleaksResult] = await Promise.all([
       runtimeDeps.runSemgrep(intake.workspaceDir),
       runtimeDeps.runGitleaks(intake.workspaceDir),
@@ -209,7 +209,7 @@ export async function createAndStoreReport(repoUrl: string): Promise<ScanReport>
       grade: scoreResult.grade,
       status: scoreResult.status,
       summary: scoreResult.summary,
-      engineVersion: "v0.2.2",
+      engineVersion: "v0.2.3",
       scanMeta: {
         source: effectiveKind === "npm_command" ? "npm_registry" : "github_api",
         filesScanned: intake.files.length,

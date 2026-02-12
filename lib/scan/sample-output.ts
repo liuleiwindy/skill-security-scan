@@ -166,14 +166,14 @@ nO5jP1sL2kN7kQ9zM2oP5xN3jQ8zL3kQ0oP6yN4kR9zL4kR1oP7zN5kS0zL5kR2o
 /**
  * Generate sample reports.
  */
-export function generateSampleReports(): {
+export async function generateSampleReports(): Promise<{
   clean: ScanReport;
   withIssues: ScanReport;
   critical: ScanReport;
-} {
-  const clean = runScan('https://github.com/example/clean-repo', SAMPLE_CLEAN_REPO);
-  const withIssues = runScan('https://github.com/example/typical-repo', SAMPLE_WITH_ISSUES);
-  const critical = runScan('https://github.com/example/risky-repo', SAMPLE_CRITICAL_ISSUES);
+}> {
+  const clean = await runScan('https://github.com/example/clean-repo', SAMPLE_CLEAN_REPO);
+  const withIssues = await runScan('https://github.com/example/typical-repo', SAMPLE_WITH_ISSUES);
+  const critical = await runScan('https://github.com/example/risky-repo', SAMPLE_CRITICAL_ISSUES);
 
   return { clean, withIssues, critical };
 }
