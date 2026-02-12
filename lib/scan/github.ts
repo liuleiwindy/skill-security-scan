@@ -1,8 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { MockFile } from "./engine";
-import type { ScanOptions } from "./scan-types";
+import type { MockFile, ScanOptions } from "./scan-types";
 import { DEFAULT_SCAN_OPTIONS, GITHUB_DEFAULT_TIMEOUT_MS, GITHUB_DEFAULT_MAX_FILE_BYTES } from "./scan-policy";
 
 export type RepoFetchErrorCode =

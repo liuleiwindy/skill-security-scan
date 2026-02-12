@@ -14,7 +14,8 @@ import { calculateScoreResult } from './scoring';
 import { ExternalPIOrchestrator, ExternalPIResult, externalResultToFinding } from './external-pi-adapter';
 import { PromptfooDetector } from './external-pi-detectors/promptfoo-detector';
 import { DEFAULT_SCAN_OPTIONS } from './scan-policy';
-import type { ScanOptions } from './scan-types';
+import type { MockFile, ScanOptions } from './scan-types';
+export type { MockFile } from './scan-types';
 
 export interface ScanReport {
   id: string;
@@ -39,17 +40,6 @@ export interface ScanReport {
     packageName?: string;
     packageVersion?: string;
   };
-}
-
-/**
- * Mock file system interface.
- *
- * In V0.1, this is a simplified interface.
- * Production would integrate with actual git clone and file system access.
- */
-export interface MockFile {
-  path: string;
-  content: string;
 }
 
 /**

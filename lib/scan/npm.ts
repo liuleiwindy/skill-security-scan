@@ -2,8 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
-import type { MockFile } from "./engine";
-import type { ScanOptions } from "./scan-types";
+import type { MockFile, ScanOptions } from "./scan-types";
 import {
   DEFAULT_SCAN_OPTIONS,
   NPM_DEFAULT_TIMEOUT_MS,

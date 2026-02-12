@@ -2,12 +2,12 @@ import type { ScanReport } from "./scan/engine";
 import { runScan } from "./scan/engine";
 import { calculateScoreResult } from "./scan/scoring";
 import { fetchGitHubRepoFiles } from "./scan/github";
-import { classifyScanInput, fetchNpmPackageFiles, resolveSkillsAddGitHubTarget } from "./scan/npm";
+import { fetchNpmPackageFiles, resolveSkillsAddGitHubTarget } from "./scan/npm";
 import type { NpmFetchResult } from "./scan/npm";
 import { runSemgrepScan } from "./scan/adapters/semgrep";
 import { runGitleaksScan } from "./scan/adapters/gitleaks";
 import { dedupeAndSortFindings } from "./scan/adapters/normalize";
-import { SKILLS_ADD_GITHUB_TIMEOUT_MS, SKILLS_ADD_MAX_ROOTS, prioritizeSkillRoots } from "./scan/scan-policy";
+import { runIntakeFromInput, type IntakeDeps } from "./scan/intake";
 import { requirePostgresForProduction, saveReport, loadReport } from "./report-repository";
 
 type RuntimeDeps = {
@@ -43,33 +43,20 @@ export function __resetScanRuntimeDepsForTest() {
   };
 }
 
+function getIntakeDeps(): IntakeDeps {
+  return {
+    fetchRepoFiles: runtimeDeps.fetchRepoFiles,
+    fetchNpmFiles: runtimeDeps.fetchNpmFiles,
+    resolveSkillsAddGitHub: runtimeDeps.resolveSkillsAddGitHub,
+  };
+}
 
 export async function createAndStoreReport(repoUrl: string): Promise<ScanReport> {
   requirePostgresForProduction();
-  const inputKind = classifyScanInput(repoUrl);
-  const skillsGitHubTarget =
-    inputKind === "npm_command"
-      ? await runtimeDeps.resolveSkillsAddGitHub(repoUrl).catch(() => null)
-      : null;
-  const prioritizedSkillRoots = skillsGitHubTarget
-    ? prioritizeSkillRoots(skillsGitHubTarget.skillRoots, SKILLS_ADD_MAX_ROOTS)
-    : [];
-  const effectiveKind = skillsGitHubTarget ? "github_url" : inputKind;
-  const intake =
-    effectiveKind === "npm_command"
-      ? await runtimeDeps.fetchNpmFiles(repoUrl)
-      : await runtimeDeps.fetchRepoFiles(
-          skillsGitHubTarget?.repoUrl || repoUrl,
-          skillsGitHubTarget
-            ? {
-                timeoutMs: SKILLS_ADD_GITHUB_TIMEOUT_MS,
-                ...(prioritizedSkillRoots.length > 0 ? { subPaths: prioritizedSkillRoots } : {}),
-              }
-            : undefined,
-        );
-  const npmIntake: NpmFetchResult | null = effectiveKind === "npm_command" ? (intake as NpmFetchResult) : null;
+  const { intake, effectiveRepoUrl, npmMeta } = await runIntakeFromInput(repoUrl, getIntakeDeps());
+  const npmIntake: NpmFetchResult | null = intake.kind === "npm_command" ? npmMeta : null;
   try {
-    const internalReport = await runScan(skillsGitHubTarget?.repoUrl || repoUrl, intake.files);
+    const internalReport = await runScan(effectiveRepoUrl, intake.files);
     const [semgrepResult, gitleaksResult] = await Promise.all([
       runtimeDeps.runSemgrep(intake.workspaceDir),
       runtimeDeps.runGitleaks(intake.workspaceDir),
@@ -89,7 +76,7 @@ export async function createAndStoreReport(repoUrl: string): Promise<ScanReport>
       summary: scoreResult.summary,
       engineVersion: "v0.2.3",
       scanMeta: {
-        source: effectiveKind === "npm_command" ? "npm_registry" : "github_api",
+        source: intake.kind === "npm_command" ? "npm_registry" : "github_api",
         filesScanned: intake.files.length,
         filesSkipped: intake.filesSkipped,
         packageName: npmIntake?.packageName,

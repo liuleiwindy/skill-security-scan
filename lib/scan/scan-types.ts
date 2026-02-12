@@ -35,3 +35,14 @@ export interface ScanOptions {
   fallbackToLocal?: boolean;
 }
 
+/**
+ * Mock file system interface.
+ *
+ * In V0.1, this was defined in engine.ts.
+ * V0.2.3.2: moved here so that both engine and intake/adapters
+ * can depend on a shared type without creating cycles.
+ */
+export interface MockFile {
+  path: string;
+  content: string;
+}
