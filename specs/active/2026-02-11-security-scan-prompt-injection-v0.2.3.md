@@ -32,7 +32,7 @@ This version must not refactor existing non-PI scan architecture.
 1. Role split and role-specific UI.
 2. Payment/verification mechanics.
 3. Broader agent-risk families.
-4. Report/poster redesign.
+4. Report/poster redesign (except minimal PI scan visibility indicators).
 5. API schema break.
 
 ## 4. Interaction Contract
@@ -45,6 +45,7 @@ No UX path changes:
 4. poster remains available
 
 PI risk is shown as part of existing findings list.
+Minimal transparency UI (for example PI scan enabled/hit counters) is allowed without changing routes or payload schema.
 
 ## 5. PI Taxonomy and Severity
 
@@ -69,13 +70,15 @@ PI risk is shown as part of existing findings list.
 
 ### 6.2 External Tooling Path
 
-Use `promptfoo` for PI external evaluation integration.
+Runtime scanning uses direct Z.AI OpenAI-compatible API calls.
+Promptfoo is used as the validation/evaluation harness in local/CI tests.
 
-1. Online provider target for this project: Z.AI OpenAI-compatible endpoint.
-2. Required environment:
+1. Runtime online provider target: Z.AI OpenAI-compatible endpoint (`/chat/completions`).
+2. Required runtime environment:
    - `ZAI_API_KEY`
-   - `ZAI_API_BASE_URL` (optional override)
-3. Online config file should be isolated:
+   - `ZAI_API_BASE_URL` (optional override; coding endpoint supported)
+   - `ZAI_PI_MODEL` (optional override; default `glm-4.5`)
+3. Promptfoo online config is isolated from runtime detector code:
    - `tests/promptfoo/prompt-injection.online.yaml`
 
 ### 6.3 Local Fallback Path
@@ -128,17 +131,20 @@ No finding schema changes:
 Recommended validation order:
 
 1. `npm test`
-2. `npm run test:promptfoo` (local)
-3. `npm run test:promptfoo:online` (release gate/manual gate)
+2. `npm run build`
+3. `npm run test:promptfoo` (local)
+4. `npm run test:promptfoo:online:connect` (connectivity)
+5. `npm run test:promptfoo:online:quick` (single-case smoke)
+6. `npm run test:promptfoo:online` (release/manual gate)
 
 ### 8.3 External Interface Setup (Z.AI)
 
-1. Set `ZAI_API_KEY`.
-2. Configure promptfoo online provider with OpenAI-compatible fields:
-   - model id
-   - base URL
-   - API key from env
-3. Parse promptfoo output and map to PI finding IDs for report integration.
+1. Set runtime env:
+   - `ZAI_API_KEY`
+   - `ZAI_API_BASE_URL`
+   - optional `ZAI_PI_MODEL`
+2. Runtime detector calls OpenAI-compatible `chat/completions` and maps JSON output to PI finding IDs.
+3. Promptfoo configs validate behavior and regression, but are not the runtime execution path.
 
 ## 9. Acceptance Criteria
 

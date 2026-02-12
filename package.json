@@ -11,7 +11,10 @@
     "lint:fix": "next lint --fix",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:promptfoo": "HOME=/tmp promptfoo eval tests/promptfoo/prompt-injection.config.yaml",
+    "test:promptfoo": "HOME=/tmp npx --yes promptfoo eval -c tests/promptfoo/prompt-injection.local.yaml",
+    "test:promptfoo:online:connect": "set -a; [ -f .env.local ] && . .env.local; set +a; OPENAI_API_KEY=\"$ZAI_API_KEY\" OPENAI_API_BASE_URL=\"$ZAI_API_BASE_URL\" HOME=/tmp REQUEST_TIMEOUT_MS=15000 npx --yes promptfoo eval -c tests/promptfoo/prompt-injection.connectivity.yaml --max-concurrency 1 --no-cache",
+    "test:promptfoo:online": "set -a; [ -f .env.local ] && . .env.local; set +a; OPENAI_API_KEY=\"$ZAI_API_KEY\" OPENAI_API_BASE_URL=\"$ZAI_API_BASE_URL\" HOME=/tmp REQUEST_TIMEOUT_MS=45000 npx --yes promptfoo eval -c tests/promptfoo/prompt-injection.online.yaml",
+    "test:promptfoo:online:quick": "set -a; [ -f .env.local ] && . .env.local; set +a; OPENAI_API_KEY=\"$ZAI_API_KEY\" OPENAI_API_BASE_URL=\"$ZAI_API_BASE_URL\" HOME=/tmp REQUEST_TIMEOUT_MS=20000 npx --yes promptfoo eval -c tests/promptfoo/prompt-injection.online.yaml --filter-first-n 1 --max-concurrency 1 --no-cache",
     "scan:external": "node lib/scan/external-pi-detectors/cli.cjs"
   },
   "dependencies": {
@@ -28,6 +31,7 @@
     "@types/react-dom": "^19",
     "eslint": "^8.57.1",
     "eslint-config-next": "^15.5.12",
+    "promptfoo": "^0.120.24",
     "typescript": "^5",
     "vitest": "^4.0.18"
   }

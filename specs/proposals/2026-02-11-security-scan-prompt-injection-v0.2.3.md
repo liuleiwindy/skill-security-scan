@@ -29,6 +29,7 @@ Add prompt-injection risk scanning in the existing product flow, with external t
 3. No broader agent-risk family rollout.
 4. No scoring-system redesign.
 5. No route/schema breaking change.
+6. No major report/poster redesign (minimal PI visibility indicators are acceptable).
 
 ## 4. Scope
 
@@ -49,11 +50,13 @@ Use OWASP LLM01 alignment with two locked classes:
 
 For this project, external online evaluation must support Z.AI large model service through OpenAI-compatible API mode.
 
-1. Provider mode: `openai`-compatible client path via `promptfoo`.
+1. Provider mode:
+   - runtime: direct `openai`-compatible `chat/completions` client path
+   - validation: `promptfoo` eval harness for local/CI testing
 2. Required runtime env:
    - `ZAI_API_KEY`
    - optional `ZAI_API_BASE_URL` (default project value should point to Z.AI OpenAI-compatible endpoint)
-3. Online config must be isolated from runtime code config files.
+3. Promptfoo online config must be isolated from runtime detector code config files.
 
 ### 4.4 User Interaction Contract
 

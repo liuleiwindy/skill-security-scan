@@ -129,11 +129,13 @@ export class ExternalPIOrchestrator {
   ): Promise<ExternalPIResult> {
     // Sort detectors by priority (lower number = higher priority)
     const sortedDetectors = [...this.config.detectors].sort((a, b) => a.priority - b.priority);
+    let externalDetectorAvailable = false;
 
     // Try external detectors first (if enabled)
     if (this.config.enableExternal) {
       for (const detector of sortedDetectors) {
         if (await detector.isAvailable()) {
+          externalDetectorAvailable = true;
           const result = await detector.detect(content, filePath);
           // Return first successful detection
           if (result.detected) {
@@ -143,8 +145,27 @@ export class ExternalPIOrchestrator {
               method: 'external',
             };
           }
+
+          // Detector is available but cannot execute (network timeout/provider error):
+          // signal local fallback explicitly.
+          if (result.method === 'local' || !!result.error) {
+            return {
+              ...result,
+              detector: detector.id,
+              method: 'local',
+            };
+          }
         }
       }
+    }
+
+    // External path executed successfully (or all returned no-hit), so local PI
+    // rules must not run.
+    if (externalDetectorAvailable) {
+      return {
+        detected: false,
+        method: 'external',
+      };
     }
 
     // Fallback to local detection if enabled and all externals failed

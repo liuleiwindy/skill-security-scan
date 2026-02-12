@@ -31,6 +31,9 @@ export default async function ReportPage({
   }
 
   const status = statusTag(report.status);
+  const pi1Hits = report.findings.filter((finding) => finding.ruleId === "PI-1-INSTRUCTION-OVERRIDE").length;
+  const pi2Hits = report.findings.filter((finding) => finding.ruleId === "PI-2-PROMPT-SECRET-EXFIL").length;
+  const piTotalHits = pi1Hits + pi2Hits;
 
   return (
     <div className={styles.container}>
@@ -92,6 +95,31 @@ export default async function ReportPage({
               {report.summary.low}
             </div>
             <div className={styles.summaryLabel}>Low</div>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.piScan}>
+        <div className={styles.piHeader}>
+          <h2 className={styles.sectionTitle}>Prompt Injection Scan</h2>
+          <span className={styles.piEnabledBadge}>Enabled</span>
+        </div>
+        <p className={styles.piDescription}>
+          Prompt-injection checks are executed in engine v0.2.3+ for PI-1 (instruction override) and PI-2
+          (prompt/secret exfiltration).
+        </p>
+        <div className={styles.piGrid}>
+          <div className={styles.piItem}>
+            <div className={styles.piCount}>{piTotalHits}</div>
+            <div className={styles.piLabel}>PI Findings</div>
+          </div>
+          <div className={styles.piItem}>
+            <div className={styles.piCount}>{pi1Hits}</div>
+            <div className={styles.piLabel}>PI-1 Hits</div>
+          </div>
+          <div className={styles.piItem}>
+            <div className={styles.piCount}>{pi2Hits}</div>
+            <div className={styles.piLabel}>PI-2 Hits</div>
           </div>
         </div>
       </section>

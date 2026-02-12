@@ -78,7 +78,7 @@ describe("api routes", () => {
     expect(reportResp.status).toBe(200);
     const report = (await reportResp.json()) as { id: string; engineVersion: string; findings: unknown[] };
     expect(report.id).toBe(payload.scanId);
-    expect(report.engineVersion).toBe("v0.2.2");
+    expect(report.engineVersion).toBe("v0.2.3");
     expect(report.findings.length).toBeGreaterThan(0);
 
     const posterResp = await getPoster(

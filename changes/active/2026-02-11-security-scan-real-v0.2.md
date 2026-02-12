@@ -11,9 +11,9 @@
 
 ## 1. Execution Status
 
-- Phase: Pre-implementation
+- Phase: V0.2.3 completed, V0.2.4 pending planning
 - Spec status: Active
-- Implementation approval: Pending explicit "start building v0.2" instruction
+- Implementation approval: V0.2.3 delivered and validated
 
 ## 2. Action List (V0.2.x)
 
@@ -41,10 +41,11 @@
      - tarball extraction + scan pipeline reuse
 
 4. `v0.2.3` Prompt-injection integration (external-first)
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - prompt-injection findings for PI-1/PI-2
-     - external tool first (promptfoo online path)
+     - runtime external-first path via direct Z.AI `chat/completions`
+     - Promptfoo online/local as validation harness
      - local deterministic rules fallback only
      - no non-PI architecture refactor
 

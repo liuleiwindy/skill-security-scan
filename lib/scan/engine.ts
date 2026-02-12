@@ -11,7 +11,7 @@
 
 import { runAllRules, Finding } from './rules';
 import { calculateScoreResult } from './scoring';
-import { ExternalPIOrchestrator } from './external-pi-adapter';
+import { ExternalPIOrchestrator, ExternalPIResult, externalResultToFinding } from './external-pi-adapter';
 import { PromptfooDetector } from './external-pi-detectors/promptfoo-detector';
 
 export interface ScanReport {
@@ -75,6 +75,7 @@ export interface ScanOptions {
 export const DEFAULT_SCAN_OPTIONS: ScanOptions = {
   maxFiles: 100, // Reasonable limit for demo
   includeExtensions: [
+    '.txt',
     '.md',
     '.markdown',
     '.js',
@@ -201,57 +202,38 @@ export async function runScan(
     detectors: [new PromptfooDetector()], // Register available detector(s)
   });
 
-  // Run PI detection with external tool support
-  const piFindings: Finding[] = [];
-  for (const file of filesToScan) {
-    try {
-      const externalResult = await piOrchestrator.detect(file.content, file.path);
-      if (externalResult.detected && externalResult.ruleId && externalResult.snippet) {
-        // Convert external result to Finding format
-        piFindings.push({
-          ruleId: externalResult.ruleId,
-          severity: 'high',
-          title:
-            externalResult.ruleId === 'PI-1-INSTRUCTION-OVERRIDE'
-              ? 'Prompt injection: instruction override pattern'
-              : 'Prompt injection: prompt/secret exfiltration pattern',
-          file: file.path,
-          line: externalResult.line ?? 1,
-          snippet: externalResult.snippet,
-          recommendation:
-            externalResult.ruleId === 'PI-1-INSTRUCTION-OVERRIDE'
-              ? 'Do not allow instruction-priority override requests. Enforce system/developer policy precedence.'
-              : 'Do not reveal system prompts, internal policies, or sensitive configuration in responses.',
-        });
-      }
-    } catch (error) {
-      // Log but don't fail entire scan
-      console.warn(`Failed to run PI detection on ${file.path}:`, error);
-    }
-  }
-
-  // Run remaining rules on each file
   const allFindings: Finding[] = [];
 
-  // Determine if we should skip local PI rules (external detector was available)
-  const externalPIWasAvailable = piFindings.length > 0;
-
   for (const file of filesToScan) {
+    let externalResult: ExternalPIResult = {
+      detected: false,
+      method: 'local',
+    };
+
+    // External PI detection must never block baseline local scanning.
     try {
-      // Skip local PI rules if external detector ran (prevent duplicates)
-      const skipPIRules = externalPIWasAvailable
-        ? ['PI-1-INSTRUCTION-OVERRIDE', 'PI-2-PROMPT-SECRET-EXFIL']
-        : undefined;
+      externalResult = await piOrchestrator.detect(file.content, file.path);
+      const externalFinding = externalResultToFinding(externalResult, file.path);
+      if (externalFinding) {
+        allFindings.push(externalFinding);
+      }
+    } catch (error) {
+      console.warn(`Failed to run external PI detection on ${file.path}, falling back to local rules:`, error);
+    }
+
+    try {
+      // Only skip local PI rules when external path really executed.
+      const skipPIRules =
+        externalResult.method === 'external'
+          ? ['PI-1-INSTRUCTION-OVERRIDE', 'PI-2-PROMPT-SECRET-EXFIL']
+          : undefined;
       const findings = runAllRules(file.content, file.path, skipPIRules);
       allFindings.push(...findings);
     } catch (error) {
       // Log but don't fail entire scan
-      console.warn(` failed to scan file ${file.path}:`, error);
+      console.warn(`Failed to scan file ${file.path}:`, error);
     }
   }
-
-  // Merge findings (PI + other rules)
-  allFindings.push(...piFindings);
 
   // Sort findings by severity (critical first) then by file path
   sortFindings(allFindings);

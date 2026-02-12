@@ -1,0 +1,21 @@
+prompts:
+  - label: connectivity
+    raw: |
+      Reply with exactly: OK
+
+providers:
+  - id: openai:chat:glm-4.5
+    label: Z.AI OpenAI Compatible
+    config:
+      maxRetries: 0
+
+tests:
+  - vars: {}
+    assert:
+      - type: icontains
+        value: ok
+
+defaultTest:
+  options:
+    provider: openai:chat:glm-4.5
+    prompt: connectivity

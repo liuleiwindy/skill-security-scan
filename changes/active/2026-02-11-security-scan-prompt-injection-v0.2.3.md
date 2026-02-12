@@ -9,44 +9,45 @@
 
 ## 1. Execution Status
 
-- Phase: Pre-implementation
+- Phase: Implemented and validated
 - Spec status: Active
-- Implementation approval: Approved, pending corrected implementation
-- Note: previous implementation direction was incorrect and is replaced by this plan
+- Implementation approval: Completed
+- Note: runtime path uses direct Z.AI `chat/completions`; Promptfoo remains evaluation harness
 
 ## 2. Action List
 
 1. Lock PI scope
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - keep only `PI-1` and `PI-2`
      - no agent-risk expansion
 
 2. External-first PI detection integration
-   - Status: pending
+   - Status: completed
    - Deliverables:
-     - integrate `promptfoo` PI external path into scan workflow
-     - configure Z.AI OpenAI-compatible provider path
+     - runtime external PI path integrated via direct Z.AI `chat/completions`
+     - Promptfoo local/online configs integrated for validation harness
+     - configured Z.AI OpenAI-compatible provider path (coding endpoint supported)
      - keep existing findings schema
 
 3. Local fallback PI path
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - keep local PI rules as fallback only
      - fallback triggers only when external path unavailable/fails
 
 4. Baseline architecture protection
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - do not refactor non-PI existing scan architecture
      - avoid unrelated pipeline behavior changes
 
 5. Validation and regression
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - PI fixtures pass
-     - promptfoo local mode pass
-     - promptfoo online mode (Z.AI) pass when credentials available
+     - Promptfoo local mode pass
+     - Promptfoo online connectivity/smoke/full modes pass when credentials available
      - full test suite green
 
 ## 3. Acceptance Gate Before Release
@@ -57,7 +58,19 @@
 4. `/scan -> /scan/report/:id -> /scan/poster/:id` flow remains stable.
 5. `npm test` and `npm run build` pass.
 
-## 4. Notes
+## 4. Implementation Notes (Current)
+
+1. Runtime detector:
+   - `lib/scan/external-pi-detectors/promptfoo-detector.ts`
+   - direct Z.AI OpenAI-compatible `chat/completions` call
+2. Evaluation harness:
+   - `tests/promptfoo/prompt-injection.local.yaml`
+   - `tests/promptfoo/prompt-injection.online.yaml`
+   - scripts in `package.json` (`test:promptfoo:*`)
+3. Report visibility:
+   - report page includes explicit Prompt Injection Scan section (enabled + PI hit counts)
+
+## 5. Notes
 
 1. V0.2.3 intentionally excludes role split and paywall mechanics.
 2. Scope is prompt-injection risk only.
