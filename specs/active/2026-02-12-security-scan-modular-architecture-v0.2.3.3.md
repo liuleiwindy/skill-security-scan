@@ -12,117 +12,115 @@
 
 ## 1. Objective
 
-Introduce a dedicated scan pipeline layer and external-scanner facade so `store.ts` no longer owns semgrep/gitleaks orchestration, finding merge, and score assembly.
+Introduce a dedicated scan pipeline and external scanner facade so `store.ts` no longer owns semgrep/gitleaks orchestration, findings merge, and score assembly.
 
 ## 2. Scope
 
 1. Create `lib/scan/external-scanners.ts`
 2. Create `lib/scan/pipeline.ts`
-3. Move from `lib/store.ts` into pipeline layer:
-   - `runScan(...)` invocation and report base assembly
-   - semgrep + gitleaks execution orchestration
-   - finding merge + dedupe/sort flow
-   - score recomputation and final summary/grade/status updates
-4. Keep `store.ts` as thin facade:
-   - intake call
-   - pipeline call
-   - repository save/load
-   - runtime deps test hooks
-5. Keep finding schema and scoring semantics unchanged
+3. Move from `lib/store.ts` to pipeline layer:
+   - internal scan invocation (`runScan`)
+   - external scanner execution (`semgrep` + `gitleaks`)
+   - findings merge + dedupe/sort
+   - score recomputation and report field update
+4. Keep `store.ts` as facade:
+   - intake resolution (`runIntakeFromInput`)
+   - pipeline call (`runFullScan`)
+   - persistence (`saveReport`/`loadReport`)
+5. Keep public report schema and API contract unchanged
 
 ## 3. Out of Scope
 
 1. no `pi-pipeline.ts` extraction in this version (`v0.2.3.4`)
-2. no route/API schema change
-3. no scanner error-domain mapping to new public fields
-4. no `scanMeta.scanners` schema extension in this version
-5. no new scanner adapters/tools
+2. no prompt-injection runtime path movement in this version
+3. no route/API schema change
+4. no `scanMeta.scanners` public schema extension in this version
+5. no new scanner adapter/tools beyond semgrep and gitleaks
 
 ## 4. Design Constraints
 
-1. API contract must remain unchanged:
+1. API contract unchanged:
    - `POST /api/scan`
    - `GET /api/scan/:id`
-2. `createAndStoreReport(repoUrl)` signature must remain unchanged.
-3. Finding merge behavior must remain equivalent to pre-refactor flow:
-   - merge baseline findings + semgrep findings + gitleaks findings
-   - run existing `dedupeAndSortFindings`
-4. Scoring behavior must remain equivalent:
-   - use existing `calculateScoreResult`
-   - report `score/grade/status/summary` values remain backward-compatible
-5. External scanner failures must remain non-blocking for the full scan flow (same as current behavior expectation).
+2. `createAndStoreReport(repoUrl)` signature unchanged.
+3. Findings merge behavior unchanged:
+   - internal findings + semgrep findings + gitleaks findings
+   - dedupe/sort via existing normalize utilities
+4. Scoring behavior unchanged:
+   - score/grade/status/summary derived from merged findings via existing scoring logic
+5. External scanner failures are non-blocking:
+   - single scanner failure does not abort scan
+   - all scanners failure still produces report from internal scan
+6. Pipeline starts from intake output and does not perform input classification/routing.
 
 ## 5. Target Module Responsibilities
 
 ### 5.1 `lib/scan/external-scanners.ts`
 
-Must provide a single execution facade for external scanners.
+Must provide a unified facade for external scanners.
 
-Required responsibilities:
+Responsibilities:
 
-1. call semgrep adapter
-2. call gitleaks adapter
-3. normalize each scanner result into a stable internal structure
-4. expose aggregated findings for pipeline merge
+1. run semgrep adapter
+2. run gitleaks adapter
+3. aggregate findings
+4. expose per-scanner internal status (`ok` / `failed`) for pipeline-side observability
 
-Recommended internal shape:
-
-1. scanner id (`semgrep` / `gitleaks`)
-2. status (`ok` / `failed`)
-3. findings array
-4. optional internal error message
-
-Note: this structure is internal for `v0.2.3.3`; public report schema remains unchanged.
+Note: scanner status is internal in `v0.2.3.3`; no public report schema changes yet.
 
 ### 5.2 `lib/scan/pipeline.ts`
 
-Must provide full scan orchestration facade consumed by store.
+Must provide the full scan orchestration used by store.
 
-Required responsibilities:
+Responsibilities:
 
-1. run baseline `runScan` on intake files
-2. invoke `runExternalScanners(workspaceDir, deps)`
-3. merge + dedupe + sort findings
-4. recompute score and summary fields
-5. output final `ScanReport`
+1. run internal scan on intake files
+2. run external scanners through facade
+3. merge + dedupe findings
+4. recompute score and summary
+5. return final `ScanReport` ready for persistence
 
-Pipeline should be deterministic for same input and scanner outputs.
+Recommended signature:
+
+1. `runFullScan(effectiveRepoUrl, intake, deps)`
 
 ### 5.3 `lib/store.ts`
 
-Must remain facade with existing exports:
+Must stay thin and preserve existing exports:
 
 1. `createAndStoreReport(repoUrl)`
 2. `getStoredReport(id)`
 3. `__setScanRuntimeDepsForTest`
 4. `__resetScanRuntimeDepsForTest`
 
-`store.ts` should not contain scanner merge/scoring orchestration details after this refactor.
-
 ## 6. Acceptance Criteria
 
-1. Existing tests pass without API contract regression.
-2. For same mocked scanner outputs, resulting report fields are unchanged versus pre-refactor behavior.
-3. `store.ts` no longer directly performs external scanner merge/scoring orchestration.
-4. External scanner adapter failure path remains non-blocking and behavior-compatible.
+1. Existing tests pass with no API contract regression.
+2. For same mocked scanner outputs, report fields are backward-compatible with pre-refactor behavior.
+3. `store.ts` no longer directly owns scanner merge/scoring orchestration.
+4. Non-blocking semantics verified:
+   - one external scanner fails, report still generated
+   - all external scanners fail, report still generated
 
 ## 7. Validation Plan
 
 1. run `npm test`
 2. run `npm run build`
-3. add/ensure tests:
-   - pipeline happy path with merged findings
-   - pipeline path where one external scanner fails but report still generated
-   - existing API tests (including npm/skills-add) remain green
+3. ensure tests include:
+   - pipeline happy path (internal + external merge)
+   - one external scanner failure path
+   - all external scanners failure path
+   - npm scanMeta path through pipeline
+4. ensure existing API tests (GitHub/npm/skills-add) remain green
 
 ## 8. Release Gate
 
-All below must pass before marking released:
+All below must pass before release:
 
 1. tests green
 2. build green
-3. no API contract regression in existing suite
-4. pipeline and store responsibilities match module boundaries in this spec
+3. no API contract regression
+4. module boundaries match this spec
 
 ## 9. Next Step
 
