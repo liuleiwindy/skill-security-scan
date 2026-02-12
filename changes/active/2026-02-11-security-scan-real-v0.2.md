@@ -11,9 +11,9 @@
 
 ## 1. Execution Status
 
-- Phase: V0.2.3 completed, V0.2.4 pending planning
+- Phase: V0.2.3 (prompt-injection capability) delivered; v0.2.3.x modularization runs as parallel non-functional track
 - Spec status: Active
-- Implementation approval: V0.2.3 delivered and validated
+- Implementation approval: Refactor track approved (non-breaking, incremental)
 
 ## 2. Action List (V0.2.x)
 
@@ -47,9 +47,36 @@
      - runtime external-first path via direct Z.AI `chat/completions`
      - Promptfoo online/local as validation harness
      - local deterministic rules fallback only
-     - no non-PI architecture refactor
+     - no functional scope expansion beyond prompt-injection coverage
 
-5. `v0.2.4` Quality and hardening (pending planning)
+5. `v0.2.3.1` Policy/Repository split
+   - Status: pending
+   - Deliverables:
+     - extract `scan-policy.ts`
+     - extract `report-repository.ts`
+     - keep `createAndStoreReport` behavior unchanged (non-functional refactor)
+
+6. `v0.2.3.2` Intake decoupling
+   - Status: pending
+   - Deliverables:
+     - introduce `intake.ts`
+     - move input classification + source-specific intake orchestration out of `store.ts` (no contract change)
+
+7. `v0.2.3.3` Pipeline/scanner decoupling
+   - Status: pending
+   - Deliverables:
+     - introduce `external-scanners.ts`
+      - introduce `pipeline.ts` with `runFullScan(input)`
+     - keep API and report schema backward-compatible (no functional scope change)
+
+8. `v0.2.3.4` PI pipeline + observability
+   - Status: pending
+   - Deliverables:
+     - extract `pi-pipeline.ts` registration point
+     - add `scanMeta.scanners` runtime status summary (additive metadata only)
+     - add unified scanner error domain mapping
+
+9. `v0.2.4` Quality and hardening (pending planning)
    - Status: pending
    - Deliverables:
      - stronger dedupe and normalization quality
@@ -62,7 +89,7 @@
      - keep static-audit disclaimer
      - keep existing report/poster flow
 
-6. `v0.2.4` Automated tests
+10. `v0.2.4` Automated tests
    - Status: pending
    - Deliverables:
      - GitHub fetcher tests (with mocked fetch responses)
@@ -87,11 +114,26 @@
    - Done when:
      - PI-1/PI-2 findings are available in reports
      - external path is primary, fallback path works on failure
-5. M5 (`v0.2.4`) - Quality and reliability baseline
+5. M5 (`v0.2.3.1`) - Policy and repository modularization
+   - Done when:
+     - `scan-policy.ts` and `report-repository.ts` extracted
+     - no API/report contract change
+6. M6 (`v0.2.3.2`) - Intake modularization
+   - Done when:
+     - `store.ts` no longer contains source-specific intake branching logic
+7. M7 (`v0.2.3.3`) - Pipeline modularization
+   - Done when:
+     - scan orchestration moved to `pipeline.ts`
+     - external scanner wrapper abstraction is in place
+8. M8 (`v0.2.3.4`) - PI pipeline + observability
+   - Done when:
+     - PI detector registration moved out of `engine.ts`
+     - scanner status emitted in `scanMeta`
+9. M9 (`v0.2.4`) - Quality and reliability baseline
    - Done when:
      - timeout/rate-limit/error contract paths are covered by tests
      - dedupe/performance/false-positive metrics meet target
-6. M6 (`v0.2.4`) - Product consistency
+10. M10 (`v0.2.4`) - Product consistency
    - Done when:
      - report/poster UI works with v0.2 payload without route changes
 

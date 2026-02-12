@@ -32,6 +32,7 @@ V0.2 is delivered in staged sub-versions:
 Sub-spec links:
 
 1. `specs/active/2026-02-11-security-scan-real-v0.2.1.md`
+2. `specs/proposals/2026-02-12-security-scan-modular-architecture-v0.2.3.x.md` (parallel refactor track; does not change v0.2.3 functional scope)
 
 ## 3. Non-Goals (V0.2)
 

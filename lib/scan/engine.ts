@@ -13,6 +13,8 @@ import { runAllRules, Finding } from './rules';
 import { calculateScoreResult } from './scoring';
 import { ExternalPIOrchestrator, ExternalPIResult, externalResultToFinding } from './external-pi-adapter';
 import { PromptfooDetector } from './external-pi-detectors/promptfoo-detector';
+import { DEFAULT_SCAN_OPTIONS } from './scan-policy';
+import type { ScanOptions } from './scan-types';
 
 export interface ScanReport {
   id: string;
@@ -38,80 +40,6 @@ export interface ScanReport {
     packageVersion?: string;
   };
 }
-
-export interface ScanOptions {
-  /**
-   * Maximum number of files to scan (for demo V0.1).
-   * Prevents scanning massive repos in demo phase.
-   */
-  maxFiles?: number;
-
-  /**
-   * File extensions to include in scan.
-   */
-  includeExtensions?: string[];
-
-  /**
-   * Directories to exclude from scan.
-   */
-  excludeDirs?: string[];
-
-  /**
-   * Enable external PI detection tools (V0.2.3).
-   * Default: true
-   */
-  enableExternalPI?: boolean;
-
-  /**
-   * Fallback to local PI rules when external tools fail.
-   * Default: true
-   */
-  fallbackToLocal?: boolean;
-}
-
-/**
- * Default scan options for V0.1 demo.
- */
-export const DEFAULT_SCAN_OPTIONS: ScanOptions = {
-  maxFiles: 100, // Reasonable limit for demo
-  includeExtensions: [
-    '.txt',
-    '.md',
-    '.markdown',
-    '.js',
-    '.ts',
-    '.jsx',
-    '.tsx',
-    '.py',
-    '.rb',
-    '.go',
-    '.java',
-    '.sh',
-    '.bash',
-    '.yml',
-    '.yaml',
-    '.json',
-    '.env',
-    '.env.example',
-    '.config',
-    '.conf',
-  ],
-  excludeDirs: [
-    'node_modules',
-    'vendor',
-    '.git',
-    'dist',
-    'build',
-    'coverage',
-    '.next',
-    '.nuxt',
-    'target',
-    'bin',
-    'obj',
-  ],
-  enableExternalPI: true, // V0.2.3: External PI detection enabled by default
-  fallbackToLocal: true, // V0.2.3: Local fallback enabled by default
-};
 
 /**
  * Mock file system interface.

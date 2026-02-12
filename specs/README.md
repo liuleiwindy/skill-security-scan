@@ -24,6 +24,12 @@ Use this folder as a strict lifecycle pipeline:
 
 `proposal -> active spec -> implementation -> released`
 
+## Active Version Rule
+
+Multiple files may exist in `specs/active/` during patch transitions.
+Execution should follow the newest approved version for the same topic line.
+Example: `v0.2.3.1` supersedes `v0.2.3` for ongoing implementation.
+
 ## Naming
 
 Use date + topic + version suffix, for example:

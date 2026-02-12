@@ -2,14 +2,16 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
-import type { MockFile, ScanOptions } from "./engine";
-import { DEFAULT_SCAN_OPTIONS } from "./engine";
+import type { MockFile } from "./engine";
+import type { ScanOptions } from "./scan-types";
+import {
+  DEFAULT_SCAN_OPTIONS,
+  NPM_DEFAULT_TIMEOUT_MS,
+  NPM_DEFAULT_MAX_TARBALL_BYTES,
+  NPM_DEFAULT_MAX_EXTRACTED_FILES,
+  NPM_DEFAULT_MAX_FILE_BYTES,
+} from "./scan-policy";
 import { RepoFetchError } from "./github";
-
-const DEFAULT_TIMEOUT_MS = 25_000;
-const DEFAULT_MAX_TARBALL_BYTES = 10 * 1024 * 1024;
-const DEFAULT_MAX_EXTRACTED_FILES = 300;
-const DEFAULT_MAX_FILE_BYTES = 300 * 1024;
 
 type ExecFileFn = typeof execFile;
 
@@ -511,10 +513,10 @@ function execTar(args: string[], timeoutMs: number, encoding: BufferEncoding | "
 }
 
 export async function fetchNpmPackageFiles(input: string, options: NpmFetchOptions = {}): Promise<NpmFetchResult> {
-  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const maxTarballBytes = options.maxTarballBytes ?? DEFAULT_MAX_TARBALL_BYTES;
-  const maxExtractedFiles = options.maxExtractedFiles ?? DEFAULT_MAX_EXTRACTED_FILES;
-  const maxFileBytes = options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES;
+  const timeoutMs = options.timeoutMs ?? NPM_DEFAULT_TIMEOUT_MS;
+  const maxTarballBytes = options.maxTarballBytes ?? NPM_DEFAULT_MAX_TARBALL_BYTES;
+  const maxExtractedFiles = options.maxExtractedFiles ?? NPM_DEFAULT_MAX_EXTRACTED_FILES;
+  const maxFileBytes = options.maxFileBytes ?? NPM_DEFAULT_MAX_FILE_BYTES;
   const normalizedOptions: ScanOptions = {
     maxFiles: options.maxFiles ?? DEFAULT_SCAN_OPTIONS.maxFiles ?? 100,
     includeExtensions: options.includeExtensions ?? DEFAULT_SCAN_OPTIONS.includeExtensions ?? [],
