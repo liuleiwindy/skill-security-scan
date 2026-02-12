@@ -3,37 +3,37 @@
 ## 0. Links
 
 - Proposal: `specs/proposals/2026-02-12-security-scan-modular-architecture-v0.2.3.x.md`
-- Active spec: `specs/active/2026-02-12-security-scan-modular-architecture-v0.2.3.1.md`
-- Parent plan: `changes/active/2026-02-11-security-scan-real-v0.2.md`
+- Active spec (released): `specs/released/2026-02-12-security-scan-modular-architecture-v0.2.3.1.md`
+- Parent plan (archive): `changes/released/2026-02-11-security-scan-real-v0.2.md`
 
 ## 1. Execution Status
 
-- Phase: Pre-implementation
-- Spec status: Active
-- Implementation approval: Approved for incremental non-breaking refactor
+- Phase: Released
+- Spec status: Released
+- Implementation approval: Completed
 
 ## 2. Action List (V0.2.3.1)
 
 1. Extract `scan-policy.ts`
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - move limits/defaults to centralized module
      - update imports in `engine.ts`, `github.ts`, `npm.ts`, `store.ts`
 
 2. Extract `report-repository.ts`
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - move file/Postgres/cache read-write logic out of `store.ts`
      - keep existing public function signatures in `store.ts`
 
 3. Refactor safety checks
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - preserve API behavior and report shape
      - no error-code or status-code regression
 
 4. Validation
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - `npm test` pass
      - `npm run build` pass

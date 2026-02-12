@@ -11,9 +11,9 @@
 
 ## 1. Execution Status
 
-- Phase: V0.2.3 (prompt-injection capability) delivered; v0.2.3.x modularization runs as parallel non-functional track
-- Spec status: Active
-- Implementation approval: Refactor track approved (non-breaking, incremental)
+- Phase: Released (historical umbrella plan, archived for traceability)
+- Spec status: Released line completed via versioned specs (`v0.2.1`~`v0.2.3.4`)
+- Implementation approval: Completed
 
 ## 2. Action List (V0.2.x)
 

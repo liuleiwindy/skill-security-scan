@@ -3,14 +3,14 @@
 ## 0. Link to Proposal and Spec
 
 - Proposal: `specs/proposals/2026-02-11-security-scan-prompt-injection-v0.2.3.md`
-- Spec: `specs/active/2026-02-11-security-scan-prompt-injection-v0.2.3.md`
+- Spec: `specs/released/2026-02-11-security-scan-prompt-injection-v0.2.3.md`
 - Reference playbook: `docs/archive/v0.2-implementation-playbook.md` (Task F section)
 - Previous release baseline: `specs/released/2026-02-11-security-scan-real-v0.2.2.md`
 
 ## 1. Execution Status
 
 - Phase: Implemented and validated
-- Spec status: Active
+- Spec status: Released
 - Implementation approval: Completed
 - Note: runtime path uses direct Z.AI `chat/completions`; Promptfoo remains evaluation harness
 

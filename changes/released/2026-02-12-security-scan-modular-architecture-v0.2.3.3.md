@@ -1,5 +1,11 @@
 # Change Plan: Modular Architecture Refactor V0.2.3.3
 
+## Execution Status
+
+- Phase: Released
+- Spec status: Released
+- Implementation approval: Completed
+
 ## Goal
 
 Extract scan orchestration and external scanner execution from `store.ts` into dedicated modules while keeping public behavior unchanged.

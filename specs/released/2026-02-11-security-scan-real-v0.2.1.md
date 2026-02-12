@@ -3,7 +3,7 @@
 ## 0. Meta
 
 - Date: 2026-02-11
-- Stage: Active (Implementation-ready)
+- Stage: Released
 - Owner: Product + Engineering
 - Parent proposal: `specs/proposals/2026-02-11-security-scan-real-v0.2.md`
 

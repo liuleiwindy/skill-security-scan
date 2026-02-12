@@ -3,7 +3,7 @@
 ## 0. Meta
 
 - Date: 2026-02-12
-- Stage: Active (Implementation-ready)
+- Stage: Released
 - Owner: Product + Engineering
 - Proposal source: `specs/proposals/2026-02-12-security-scan-modular-architecture-v0.2.3.x.md`
 - Previous active baseline: `specs/active/2026-02-12-security-scan-modular-architecture-v0.2.3.2.md`

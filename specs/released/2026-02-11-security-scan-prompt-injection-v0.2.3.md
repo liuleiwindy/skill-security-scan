@@ -3,7 +3,7 @@
 ## 0. Meta
 
 - Date: 2026-02-12
-- Stage: Active (Revised)
+- Stage: Released
 - Owner: Product + Engineering
 - Proposal source: `specs/proposals/2026-02-11-security-scan-prompt-injection-v0.2.3.md`
 - Previous release baseline: `specs/released/2026-02-11-security-scan-real-v0.2.2.md`
