@@ -41,15 +41,15 @@ Core target:
 
 ### 4.1 API Entry Guards
 
-1. add request limiter for `POST /api/scan` (IP-keyed window)
+1. add request limiter for `POST /api/scan` (IP-keyed window), executed before request body parsing
 2. add global in-flight scan concurrency cap
 3. return stable typed 429 response when blocked
 
 ### 4.2 Scanner Fallback Guardrails
 
 1. enforce scan-time upper bound with typed timeout mapping
-2. preserve non-blocking scanner behavior (partial degrade rather than total crash)
-3. ensure fallback behavior is observable in scan metadata
+2. preserve non-blocking scanner behavior (request may timeout while underlying task finishes cleanup asynchronously)
+3. avoid early workspace cleanup race during timeout path
 
 ### 4.3 Operational Config Surface
 

@@ -3,7 +3,7 @@
 ## 0. Meta
 
 - Date: 2026-02-13
-- Stage: Active (Implementation-ready)
+- Stage: Released
 - Owner: Product + Engineering
 - Proposal source: `specs/proposals/2026-02-13-security-scan-abuse-fallback-controls-v0.2.3.5.md`
 - Previous release baseline: `specs/released/2026-02-12-security-scan-modular-architecture-v0.2.3.4.md`
@@ -42,13 +42,15 @@ Required behaviors:
 1. window-based max requests
 2. deterministic cleanup of expired entries
 3. no throw on malformed/missing IP; fallback to `unknown` key
+4. safe env parsing: invalid/zero/negative env values must fall back to defaults
+5. memory hygiene: when tracked IP windows grow beyond threshold, prune expired windows in batch
 
 ### 4.2 API Integration
 
 `app/api/scan/route.ts` must:
 
-1. check limiter before starting scan
-2. increment in-flight count only after request accepted
+1. check limiter before request body parse (`request.json()`)
+2. increment in-flight count only after request accepted and payload validated
 3. decrement in-flight count in `finally` to prevent leaks
 4. map limiter/cap denial to `429 rate_limited`
 
@@ -59,6 +61,7 @@ Use bounded execution wrapper around `createAndStoreReport`:
 1. enforce `SCAN_HARD_TIMEOUT_MS`
 2. map timeout to existing typed timeout behavior (`scan_timeout`)
 3. preserve existing non-timeout error mapping
+4. timeout does not force-cancel underlying scan task; cleanup must still execute when task settles (no early workspace cleanup race)
 
 ## 5. Env Defaults
 
@@ -98,10 +101,14 @@ All env values optional; defaults apply when missing/invalid.
 1. Unit tests:
    - window limiter allow/deny logic
    - window expiry behavior
+   - invalid env fallback to defaults
+   - large tracked-window pruning behavior
    - in-flight increment/decrement behavior
+   - timeout path cleanup completion behavior
 2. API tests:
    - burst requests trigger `429 rate_limited`
    - cap overflow triggers `429 rate_limited`
+   - invalid JSON requests are counted by pre-parse rate limiter
    - normal request path unaffected under threshold
 3. Regression:
    - existing typed error mappings unchanged

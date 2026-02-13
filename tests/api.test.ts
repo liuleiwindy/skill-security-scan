@@ -6,6 +6,7 @@ import { GET as getScan } from "@/app/api/scan/[id]/route";
 import { GET as getPoster } from "@/app/api/scan/[id]/poster/route";
 import { __resetScanRuntimeDepsForTest, __setScanRuntimeDepsForTest } from "@/lib/store";
 import { RepoFetchError } from "@/lib/scan/github";
+import { abuseGuard } from "@/lib/scan/abuse-guard";
 
 describe("api routes", () => {
   beforeEach(() => {
@@ -59,6 +60,9 @@ describe("api routes", () => {
 
   afterEach(() => {
     __resetScanRuntimeDepsForTest();
+    // 重置 abuse-guard 状态
+    abuseGuard.resetInFlight();
+    abuseGuard.clearIp('test-client-ip');
   });
 
   it("creates scan and reads report/poster", async () => {
@@ -274,5 +278,210 @@ describe("api routes", () => {
     expect(posterResp.status).toBe(200);
     const poster = (await posterResp.json()) as { qrUrl: string };
     expect(poster.qrUrl).toBe(`https://skill-security-scan.vercel.app/scan/report/${payload.scanId}`);
+  });
+});
+
+// V0.2.3.5: Rate limiting and concurrency control tests
+describe("V0.2.3.5 abuse control", () => {
+  beforeEach(() => {
+    __setScanRuntimeDepsForTest({
+      fetchRepoFiles: async () => ({
+        files: [{ path: "src/index.ts", content: "const x = 'ok';\n" }],
+        workspaceDir: "/tmp/mock-scan",
+        filesSkipped: 0,
+        cleanup: async () => {},
+      }),
+      fetchNpmFiles: async () => ({
+        files: [{ path: "src/index.ts", content: "export const value = 1;\n" }],
+        workspaceDir: "/tmp/mock-npm-scan",
+        filesSkipped: 0,
+        packageName: "demo-pkg",
+        packageVersion: "1.0.0",
+        cleanup: async () => {},
+      }),
+      resolveSkillsAddGitHub: async () => null,
+      runSemgrep: async () => ({ findings: [] }),
+      runGitleaks: async () => ({ findings: [] }),
+    });
+    // 重置状态
+    abuseGuard.resetInFlight();
+    abuseGuard.clearIp('127.0.0.1');
+    abuseGuard.clearIp('test-client-ip');
+  });
+
+  afterEach(() => {
+    __resetScanRuntimeDepsForTest();
+    abuseGuard.resetInFlight();
+  });
+
+  it("allows requests under rate limit threshold", async () => {
+    // 默认阈值是 10 请求/60秒，发送 3 个请求应该通过
+    for (let i = 0; i < 3; i++) {
+      abuseGuard.clearIp('127.0.0.1'); // 清理以便每次都从新状态开始
+
+      // 为每次循环创建新的 Request 对象
+      const req = new Request("http://localhost/api/scan", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-forwarded-for": "127.0.0.1" },
+        body: JSON.stringify({ repoUrl: "https://github.com/org/repo" }),
+      });
+
+      const res = await createScan(req as any);
+      expect(res.status).toBe(200);
+    }
+  });
+
+  it("blocks requests over rate limit threshold", async () => {
+    const ip = '192.168.99.99';
+
+    // 快速发送大量请求以填满窗口
+    for (let i = 0; i < 10; i++) {
+      const req = new Request("http://localhost/api/scan", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-forwarded-for": ip,
+        },
+        body: JSON.stringify({ repoUrl: "https://github.com/org/repo" }),
+      });
+      await createScan(req as any);
+    }
+
+    // 第 11 个请求应该被阻塞
+    const blockedReq = new Request("http://localhost/api/scan", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-forwarded-for": ip,
+      },
+      body: JSON.stringify({ repoUrl: "https://github.com/org/repo" }),
+    });
+    const res = await createScan(blockedReq as any);
+    expect(res.status).toBe(429);
+
+    const payload = (await res.json()) as { error: string; message: string };
+    expect(payload.error).toBe("rate_limited");
+    expect(payload.message).toContain("rate limit");
+  });
+
+  it("blocks requests when concurrency cap is reached", async () => {
+    // 重置并发计数
+    abuseGuard.resetInFlight();
+
+    // 手动获取所有可用槽（默认 4 个）
+    const slots: boolean[] = [];
+    for (let i = 0; i < 10; i++) {
+      slots.push(abuseGuard.tryAcquireSlot());
+    }
+
+    // 应该只获取了 4 个槽
+    expect(slots.filter(Boolean).length).toBe(4);
+
+    // 尝试创建新扫描应该被阻塞
+    const req = new Request("http://localhost/api/scan", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ repoUrl: "https://github.com/org/repo" }),
+    });
+    const res = await createScan(req as any);
+    expect(res.status).toBe(429);
+
+    const payload = (await res.json()) as { error: string; message: string };
+    expect(payload.error).toBe("rate_limited");
+    expect(payload.message).toContain("concurrent");
+  });
+
+  it("releases in-flight count on successful scan", async () => {
+    abuseGuard.resetInFlight();
+
+    const req = new Request("http://localhost/api/scan", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ repoUrl: "https://github.com/org/repo" }),
+    });
+
+    const beforeCount = abuseGuard.getInFlightCount();
+
+    await createScan(req as any);
+
+    // 等待一小段时间确保 finally 执行
+    await new Promise(resolve => setTimeout(resolve, 10));
+
+    const afterCount = abuseGuard.getInFlightCount();
+
+    // 计数应该被释放（回到原始值）
+    expect(afterCount).toBeLessThanOrEqual(beforeCount);
+  });
+
+  it("returns typed 429 response for rate limiting", async () => {
+    // 填满并发槽
+    abuseGuard.resetInFlight();
+    for (let i = 0; i < 4; i++) {
+      abuseGuard.tryAcquireSlot();
+    }
+
+    const req = new Request("http://localhost/api/scan", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ repoUrl: "https://github.com/org/repo" }),
+    });
+    const res = await createScan(req as any);
+
+    expect(res.status).toBe(429);
+
+    const payload = (await res.json()) as { error: string; message: string };
+    expect(payload).toMatchObject({
+      error: "rate_limited",
+      message: expect.stringContaining("please retry later"),
+    });
+  });
+
+  it("uses 'unknown' IP when headers are missing", async () => {
+    abuseGuard.clearIp('unknown');
+
+    const req = new Request("http://localhost/api/scan", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      // 不设置 IP 相关的 header
+      body: JSON.stringify({ repoUrl: "https://github.com/org/repo" }),
+    });
+
+    // 请求应该成功（未知 IP 也应该被处理）
+    const res = await createScan(req as any);
+    expect(res.status).toBe(200);
+  });
+
+  it("counts invalid JSON requests in pre-parse rate limiting", async () => {
+    const ip = '203.0.113.77';
+    abuseGuard.clearIp(ip);
+
+    // 先用无效 JSON 填满该 IP 的限流窗口
+    for (let i = 0; i < 10; i++) {
+      const invalidReq = new Request("http://localhost/api/scan", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-forwarded-for": ip,
+        },
+        body: "{invalid-json",
+      });
+      const res = await createScan(invalidReq as any);
+      expect(res.status).toBe(400);
+    }
+
+    // 第 11 个请求即使是有效 JSON，也应被限流拦截
+    const validReq = new Request("http://localhost/api/scan", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-forwarded-for": ip,
+      },
+      body: JSON.stringify({ repoUrl: "https://github.com/org/repo" }),
+    });
+
+    const blocked = await createScan(validReq as any);
+    expect(blocked.status).toBe(429);
+    const payload = (await blocked.json()) as { error: string };
+    expect(payload.error).toBe("rate_limited");
   });
 });
