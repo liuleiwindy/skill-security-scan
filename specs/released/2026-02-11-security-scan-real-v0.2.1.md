@@ -36,7 +36,7 @@ V0.2.1 is the baseline that replaces demo simulation with repository-grounded fi
 
 1. npm/npx command intake scanning (moved to V0.2.2)
 2. Prompt injection and agent-risk custom rules (moved to V0.2.3)
-3. Advanced dedupe/performance/false-positive governance (moved to V0.2.4)
+3. Advanced dedupe/performance/false-positive governance (moved to V0.2.5 planning track)
 4. Runtime sandbox execution
 
 ## 4. API and Data Expectations

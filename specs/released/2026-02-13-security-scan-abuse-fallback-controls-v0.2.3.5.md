@@ -22,7 +22,7 @@ Close the anti-abuse gap in V0.2.3 line by shipping limiter/concurrency/timeout 
 
 ## 3. Out of Scope
 
-1. No worker architecture integration (V0.2.4).
+1. No worker architecture integration (V0.2.5).
 2. No queue system redesign.
 3. No report/poster UX redesign.
 4. No score or grade model changes.
@@ -125,4 +125,4 @@ All below must pass before marking released:
 
 ## 10. Next Step
 
-After release, proceed to V0.2.4 worker integration with this guardrail baseline retained.
+After release, proceed to V0.2.4 growth UX and V0.2.5 worker integration with this guardrail baseline retained.

@@ -6,7 +6,9 @@
 - Stage: Proposal
 - Owner: Product + Engineering
 - Parent released baseline: `specs/released/2026-02-12-security-scan-modular-architecture-v0.2.3.4.md`
-- Related forward plan: `specs/proposals/2026-02-12-security-scan-cisco-worker-integration-v0.2.4.md`
+- Related forward plans:
+  - `specs/proposals/2026-02-13-security-scan-viral-trust-loop-v0.2.4.md`
+  - `specs/proposals/2026-02-12-security-scan-cisco-worker-integration-v0.2.5.md`
 
 ## 1. Problem Statement
 
@@ -17,11 +19,11 @@ This leaves a practical risk:
 
 1. abusive burst calls can burn compute/API budget
 2. fallback controls for scanner instability are not explicit enough
-3. upcoming V0.2.4 worker integration would inherit this risk if baseline controls are missing
+3. upcoming V0.2.5 worker integration would inherit this risk if baseline controls are missing
 
 ## 2. Goal (V0.2.3.5)
 
-Ship a narrow hardening patch that makes anti-abuse controls a persistent fallback layer before V0.2.4 integration.
+Ship a narrow hardening patch that makes anti-abuse controls a persistent fallback layer before V0.2.5 integration.
 
 Core target:
 
@@ -95,14 +97,14 @@ Suggested 429 body:
 1. risk: overly strict defaults hurt normal users
    - mitigation: conservative default values + env overrides
 2. risk: memory-only limiter not shared across instances
-   - mitigation: document as V0.2.3.5 local baseline; distributed limiter deferred to V0.2.4+
+   - mitigation: document as V0.2.3.5 local baseline; distributed limiter deferred to V0.2.5+
 3. risk: introducing controls changes API behavior unexpectedly
    - mitigation: keep additive typed errors only and add dedicated API tests
 
 ## 8. Release Positioning
 
-V0.2.3.5 is a hardening patch and release gate for V0.2.4.
-No V0.2.4 worker rollout should start before this baseline is released.
+V0.2.3.5 is a hardening patch and release gate for V0.2.4/V0.2.5 line.
+No V0.2.5 worker rollout should start before this baseline is released.
 
 ## 9. Next Step
 

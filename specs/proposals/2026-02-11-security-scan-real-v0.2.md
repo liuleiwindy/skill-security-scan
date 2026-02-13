@@ -27,12 +27,15 @@ V0.2 is delivered in staged sub-versions:
 1. `v0.2.1` - GitHub intake + mature scanners (Semgrep + Gitleaks) + authenticated GitHub API mode
 2. `v0.2.2` - npm/npx input scanning (scan from package/install command, not only repo URL)
 3. `v0.2.3` - Prompt-injection detection (external-first, local fallback)
-4. `v0.2.4` - Quality/performance/false-positive governance (pending detailed planning)
+4. `v0.2.4` - Viral experience and trust loop (scan/report/poster shareability + trend baseline)
+5. `v0.2.5` - Advanced worker integration and engine upgrades (Cisco/IP signed worker path)
 
 Sub-spec links:
 
 1. `specs/active/2026-02-11-security-scan-real-v0.2.1.md`
 2. `specs/proposals/2026-02-12-security-scan-modular-architecture-v0.2.3.x.md` (parallel refactor track; does not change v0.2.3 functional scope)
+3. `specs/proposals/2026-02-13-security-scan-viral-trust-loop-v0.2.4.md`
+4. `specs/proposals/2026-02-12-security-scan-cisco-worker-integration-v0.2.5.md`
 
 ## 3. Non-Goals (V0.2)
 
@@ -40,7 +43,7 @@ Sub-spec links:
 2. Full dynamic red-team attack simulation against live models
 3. Account system, private report ACL, paid plans
 4. Multi-repo batch scanning
-5. Distributed queue/worker architecture
+5. Full multi-tenant distributed queue platform (V0.2.5 only introduces minimal worker split, not platform-level orchestration)
 
 ## 4. Scope (V0.2)
 
@@ -93,6 +96,18 @@ V0.2 rule families:
 1. Remove “simulated results” copy.
 2. Keep explicit disclaimer: “real static scan, not full security audit”.
 3. Preserve existing report and poster URL contracts.
+
+### 4.6 Viral Trust Loop Scope (V0.2.4)
+
+1. Improve scan/report/poster information hierarchy for shareability.
+2. Make first-screen trust decision understandable to non-technical users.
+3. Add additive trend metadata (`vs previous scan`) with anonymous-first baseline.
+
+### 4.7 Advanced Engine Upgrade Scope (V0.2.5)
+
+1. Introduce worker-based advanced scanner integration (Cisco path).
+2. Keep public API/report compatibility and treat new data as additive.
+3. Keep legacy path as fallback during staged rollout.
 
 ## 5. Technical Design Constraints
 
@@ -169,7 +184,7 @@ These fields are optional and backward compatible.
    - Semgrep JSON findings can be normalized into report findings
    - Gitleaks JSON findings can be normalized into report findings
 8. npm/npx intake path is functional (`v0.2.2+`) and shares the same report schema.
-9. V0.2 final release gate (`v0.2.4`) requires all `v0.2.1~v0.2.4` criteria to pass.
+9. V0.2 final release gate (`v0.2.5`) requires all `v0.2.1~v0.2.5` criteria to pass.
 
 ## 8.1 V0.2.1 Test and Acceptance Gate
 
@@ -215,6 +230,8 @@ V0.2.1 is accepted only when all checks below pass:
 3. Final severity mapping for prompt/agent rules (`high` vs `medium` defaults).
 4. Default repository/package limits for balancing latency and coverage.
 5. npm command parser coverage boundary (`pnpm dlx`, `yarn dlx`) for future versions.
+6. Trend identity strategy for `vs previous scan` (`targetKey` normalization and collision policy).
+7. V0.2.5 worker result integration mode (callback vs poll) and signed request rollout policy.
 
 ## 11. Next Step in OpenSpec Flow
 

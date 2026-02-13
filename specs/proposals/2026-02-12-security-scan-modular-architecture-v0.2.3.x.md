@@ -11,7 +11,7 @@
 ## 1. Problem Statement
 
 V0.2.3 completed prompt-injection capability, but orchestration responsibilities remain concentrated in `store.ts` and partially in `engine.ts`.
-This increases maintenance risk for upcoming quality/performance work in V0.2.4.
+This increases maintenance risk for upcoming productization work in V0.2.4 (viral trust UX) and V0.2.5 (advanced worker integration).
 
 ## 2. Goal
 

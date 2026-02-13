@@ -1,4 +1,4 @@
-# OpenSpec Proposal: Security Scan Cisco Worker Integration V0.2.4
+# OpenSpec Proposal: Security Scan Cisco Worker Integration V0.2.5
 
 ## 0. Meta
 
@@ -6,7 +6,7 @@
 - Stage: Proposal
 - Owner: Product + Engineering
 - Parent active baseline: `specs/active/2026-02-12-security-scan-modular-architecture-v0.2.3.4.md`
-- Scope window: `v0.2.4.0 ~ v0.2.4.3`
+- Scope window: `v0.2.5.0 ~ v0.2.5.3`
 
 ## 1. Problem Statement
 
@@ -21,7 +21,7 @@ Key tension:
 2. Upgrade scanner quality significantly by integrating Cisco scanner runtime.
 3. Respect deployment reality: Vercel is not a suitable place to run heavy Python/YARA scan jobs.
 
-## 2. Goal (V0.2.4)
+## 2. Goal (V0.2.5)
 
 Introduce a split-plane scanning architecture:
 
@@ -30,7 +30,7 @@ Introduce a split-plane scanning architecture:
 3. Existing legacy scanner path remains available as fallback and rollback lane.
 4. Public API contract remains backward-compatible; new fields are additive.
 
-## 3. Non-Goals (V0.2.4)
+## 3. Non-Goals (V0.2.5)
 
 1. No full rewrite of frontend report UX.
 2. No removal of legacy engine in this version line.
@@ -74,7 +74,7 @@ Introduce runtime mode switch:
 
 ## 6. Security Baseline for Vercel <-> Worker Calls
 
-IP reachability alone is not sufficient. V0.2.4 requires signed request validation.
+IP reachability alone is not sufficient. V0.2.5 requires signed request validation.
 
 Mandatory controls:
 
@@ -95,28 +95,28 @@ Recommended headers contract:
 
 ## 7. Sub-Version Plan
 
-### 7.1 `v0.2.4.0` - Worker Adapter Foundation
+### 7.1 `v0.2.5.0` - Worker Adapter Foundation
 
 1. add worker client module in Vercel app
 2. add env config for worker URL, timeout, signing key
 3. add scanner mode switch (`legacy|cisco|hybrid`)
 4. define normalized worker response schema and mapping
 
-### 7.2 `v0.2.4.1` - Async Scan Job Flow
+### 7.2 `v0.2.5.1` - Async Scan Job Flow
 
 1. move scan execution to async task lifecycle
 2. define scan statuses (`queued`, `running`, `completed`, `failed`, `partial`)
 3. persist per-scan execution meta and timing
 4. ensure report page polling remains backward-compatible
 
-### 7.3 `v0.2.4.2` - Hybrid Comparison and Scoring Alignment
+### 7.3 `v0.2.5.2` - Hybrid Comparison and Scoring Alignment
 
 1. support dual-engine run in `hybrid`
 2. persist per-engine findings/source tags
 3. tune score/status synthesis from combined findings
 4. add internal comparison metrics output for release decision
 
-### 7.4 `v0.2.4.3` - Production Hardening and Default Flip Readiness
+### 7.4 `v0.2.5.3` - Production Hardening and Default Flip Readiness
 
 1. rollout guardrails (timeouts, retries, circuit breaker)
 2. key rotation support for request signing
@@ -171,7 +171,7 @@ No existing fields are removed or renamed.
 
 ## 12. Next Step
 
-Create active execution spec for `v0.2.4.0` focused on:
+Create active execution spec for `v0.2.5.0` focused on:
 
 1. worker client contract
 2. signed request protocol
