@@ -1,11 +1,8 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { MockFile, ScanOptions } from "./engine";
-import { DEFAULT_SCAN_OPTIONS } from "./engine";
-
-const DEFAULT_TIMEOUT_MS = 25_000;
-const DEFAULT_MAX_FILE_BYTES = 300 * 1024;
+import type { MockFile, ScanOptions } from "./scan-types";
+import { DEFAULT_SCAN_OPTIONS, GITHUB_DEFAULT_TIMEOUT_MS, GITHUB_DEFAULT_MAX_FILE_BYTES } from "./scan-policy";
 
 export type RepoFetchErrorCode =
   | "repo_not_found"
@@ -113,14 +110,17 @@ export function parseGitHubRepoUrl(repoUrl: string): GitHubRepoRef {
   return { owner, repo };
 }
 
-function includeFileByScanOptions(filePath: string, options: Required<ScanOptions>): boolean {
+function includeFileByScanOptions(filePath: string, options: ScanOptions): boolean {
+  const excludeDirs = options.excludeDirs ?? [];
+  const includeExtensions = options.includeExtensions ?? [];
+
   const pathParts = filePath.split("/");
   for (const part of pathParts) {
-    if (options.excludeDirs.includes(part)) {
+    if (excludeDirs.includes(part)) {
       return false;
     }
   }
-  return options.includeExtensions.some((ext) => filePath.endsWith(ext));
+  return includeExtensions.some((ext) => filePath.endsWith(ext));
 }
 
 async function fetchJson<T>(url: string, timeoutMs: number): Promise<T> {
@@ -200,12 +200,14 @@ export async function fetchGitHubRepoFiles(
   repoUrl: string,
   options: GitHubFetchOptions = {},
 ): Promise<GitHubFetchResult> {
-  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const maxFileBytes = options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES;
-  const normalizedOptions: Required<ScanOptions> = {
+  const timeoutMs = options.timeoutMs ?? GITHUB_DEFAULT_TIMEOUT_MS;
+  const maxFileBytes = options.maxFileBytes ?? GITHUB_DEFAULT_MAX_FILE_BYTES;
+  const normalizedOptions: ScanOptions = {
     maxFiles: options.maxFiles ?? DEFAULT_SCAN_OPTIONS.maxFiles ?? 100,
     includeExtensions: options.includeExtensions ?? DEFAULT_SCAN_OPTIONS.includeExtensions ?? [],
     excludeDirs: options.excludeDirs ?? DEFAULT_SCAN_OPTIONS.excludeDirs ?? [],
+    enableExternalPI: DEFAULT_SCAN_OPTIONS.enableExternalPI ?? true,
+    fallbackToLocal: DEFAULT_SCAN_OPTIONS.fallbackToLocal ?? true,
   };
   const deadline = Date.now() + timeoutMs;
   const remainingTimeoutMs = () => {

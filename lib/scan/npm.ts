@@ -2,14 +2,15 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
-import type { MockFile, ScanOptions } from "./engine";
-import { DEFAULT_SCAN_OPTIONS } from "./engine";
+import type { MockFile, ScanOptions } from "./scan-types";
+import {
+  DEFAULT_SCAN_OPTIONS,
+  NPM_DEFAULT_TIMEOUT_MS,
+  NPM_DEFAULT_MAX_TARBALL_BYTES,
+  NPM_DEFAULT_MAX_EXTRACTED_FILES,
+  NPM_DEFAULT_MAX_FILE_BYTES,
+} from "./scan-policy";
 import { RepoFetchError } from "./github";
-
-const DEFAULT_TIMEOUT_MS = 25_000;
-const DEFAULT_MAX_TARBALL_BYTES = 10 * 1024 * 1024;
-const DEFAULT_MAX_EXTRACTED_FILES = 300;
-const DEFAULT_MAX_FILE_BYTES = 300 * 1024;
 
 type ExecFileFn = typeof execFile;
 
@@ -99,14 +100,17 @@ function looksLikePreRelease(version: string): boolean {
   return version.includes("-");
 }
 
-function includeFileByScanOptions(filePath: string, options: Required<ScanOptions>): boolean {
+function includeFileByScanOptions(filePath: string, options: ScanOptions): boolean {
+  const excludeDirs = options.excludeDirs ?? [];
+  const includeExtensions = options.includeExtensions ?? [];
+
   const pathParts = filePath.split("/");
   for (const part of pathParts) {
-    if (options.excludeDirs.includes(part)) {
+    if (excludeDirs.includes(part)) {
       return false;
     }
   }
-  return options.includeExtensions.some((ext) => filePath.endsWith(ext));
+  return includeExtensions.some((ext) => filePath.endsWith(ext));
 }
 
 function tokenizeCommand(input: string): string[] {
@@ -508,14 +512,16 @@ function execTar(args: string[], timeoutMs: number, encoding: BufferEncoding | "
 }
 
 export async function fetchNpmPackageFiles(input: string, options: NpmFetchOptions = {}): Promise<NpmFetchResult> {
-  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const maxTarballBytes = options.maxTarballBytes ?? DEFAULT_MAX_TARBALL_BYTES;
-  const maxExtractedFiles = options.maxExtractedFiles ?? DEFAULT_MAX_EXTRACTED_FILES;
-  const maxFileBytes = options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES;
-  const normalizedOptions: Required<ScanOptions> = {
+  const timeoutMs = options.timeoutMs ?? NPM_DEFAULT_TIMEOUT_MS;
+  const maxTarballBytes = options.maxTarballBytes ?? NPM_DEFAULT_MAX_TARBALL_BYTES;
+  const maxExtractedFiles = options.maxExtractedFiles ?? NPM_DEFAULT_MAX_EXTRACTED_FILES;
+  const maxFileBytes = options.maxFileBytes ?? NPM_DEFAULT_MAX_FILE_BYTES;
+  const normalizedOptions: ScanOptions = {
     maxFiles: options.maxFiles ?? DEFAULT_SCAN_OPTIONS.maxFiles ?? 100,
     includeExtensions: options.includeExtensions ?? DEFAULT_SCAN_OPTIONS.includeExtensions ?? [],
     excludeDirs: options.excludeDirs ?? DEFAULT_SCAN_OPTIONS.excludeDirs ?? [],
+    enableExternalPI: DEFAULT_SCAN_OPTIONS.enableExternalPI ?? true,
+    fallbackToLocal: DEFAULT_SCAN_OPTIONS.fallbackToLocal ?? true,
   };
 
   const deadline = Date.now() + timeoutMs;
@@ -581,7 +587,7 @@ export async function fetchNpmPackageFiles(input: string, options: NpmFetchOptio
       await fs.mkdir(path.dirname(targetPath), { recursive: true });
       await fs.writeFile(targetPath, content, "utf8");
 
-      if (files.length >= normalizedOptions.maxFiles) {
+      if (normalizedOptions.maxFiles && files.length >= normalizedOptions.maxFiles) {
         break;
       }
     }

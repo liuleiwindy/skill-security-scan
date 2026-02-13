@@ -5,6 +5,7 @@
  * 1. Suspicious command execution patterns
  * 2. Download + execute patterns
  * 3. Hard-coded secrets/tokens
+ * 4. Prompt injection patterns (V0.2.3)
  *
  * All rules are deterministic and produce findings with clear evidence.
  */
@@ -382,22 +383,114 @@ const secretRules: Rule[] = [
 ];
 
 /**
+ * Prompt Injection Rules (V0.2.3)
+ *
+ * Detects prompt injection attack patterns.
+ * These serve as fallback when external detectors are unavailable.
+ */
+const promptInjectionRules: Rule[] = [
+  {
+    id: 'PI-1-INSTRUCTION-OVERRIDE',
+    name: 'Prompt Injection: Instruction Override',
+    severity: 'high',
+    description: 'Detects attempts to override system instructions',
+    test: (content, filePath) => {
+      const findings: Finding[] = [];
+      const lines = content.split('\n');
+
+      // Patterns for instruction override attacks
+      // More specific patterns to reduce false positives
+      const patterns = [
+        /\bignore\s+(all\s+)?(previous|prior|above)\b/gi,
+        /\bforget\s+(all\s+)?(previous|prior)\s+(instructions|prompts)\b/gi,
+        /\boverride\s+(your\s+)?(programming|instructions|system)\b/gi,
+        /\bdisregard\s+(all\s+)?(previous|prior)\s+(instructions|prompts)\b/gi,
+      ];
+
+      lines.forEach((line, index) => {
+        patterns.forEach(pattern => {
+          const matches = line.match(pattern);
+          if (matches) {
+            findings.push({
+              ruleId: 'PI-1-INSTRUCTION-OVERRIDE',
+              severity: 'high',
+              title: 'Prompt injection: instruction override pattern',
+              file: filePath,
+              line: index + 1,
+              snippet: line.trim().substring(0, 200),
+              recommendation: 'Do not allow instruction-priority override requests. Enforce system/developer policy precedence.'
+            });
+          }
+        });
+      });
+
+      return findings;
+    }
+  },
+  {
+    id: 'PI-2-PROMPT-SECRET-EXFIL',
+    name: 'Prompt Injection: Prompt/Secret Exfiltration',
+    severity: 'high',
+    description: 'Detects attempts to extract system prompts or secrets',
+    test: (content, filePath) => {
+      const findings: Finding[] = [];
+      const lines = content.split('\n');
+
+      // Patterns for prompt/secret exfiltration attacks
+      const patterns = [
+        /print\s+(your\s+)?(system\s+)?prompt/gi,
+        /show\s+(your\s+)?(system\s+)?prompt/gi,
+        /reveal\s+(your\s+)?(system\s+)?prompt/gi,
+        /output\s+(your\s+)?(system\s+)?prompt/gi,
+        /display\s+(your\s+)?(instructions|prompts|config|configuration)/gi,
+      ];
+
+      lines.forEach((line, index) => {
+        patterns.forEach(pattern => {
+          const matches = line.match(pattern);
+          if (matches) {
+            findings.push({
+              ruleId: 'PI-2-PROMPT-SECRET-EXFIL',
+              severity: 'high',
+              title: 'Prompt injection: prompt/secret exfiltration pattern',
+              file: filePath,
+              line: index + 1,
+              snippet: line.trim().substring(0, 200),
+              recommendation: 'Do not reveal system prompts, internal policies, or sensitive configuration in responses.'
+            });
+          }
+        });
+      });
+
+      return findings;
+    }
+  },
+];
+
+/**
  * All scan rules organized by category.
  */
 export const ALL_RULES: Rule[] = [
   ...commandExecutionRules,
   ...downloadExecuteRules,
   ...secretRules,
+  ...promptInjectionRules,
 ];
 
 /**
  * Run all rules against file content.
  * Returns array of findings (may be empty).
+ * @param skipRuleIds - Optional array of rule IDs to skip
  */
-export function runAllRules(content: string, filePath: string): Finding[] {
+export function runAllRules(content: string, filePath: string, skipRuleIds?: string[]): Finding[] {
   const allFindings: Finding[] = [];
 
   for (const rule of ALL_RULES) {
+    // Skip specified rules (e.g., PI rules when external detector succeeded)
+    if (skipRuleIds && skipRuleIds.includes(rule.id)) {
+      continue;
+    }
+
     try {
       const findings = rule.test(content, filePath);
       allFindings.push(...findings);

@@ -1,4 +1,4 @@
-import type { MockFile } from "./engine";
+import type { MockFile } from "./scan-types";
 
 function hashRepoUrl(repoUrl: string): number {
   let hash = 0;

@@ -11,6 +11,11 @@
 
 import { runAllRules, Finding } from './rules';
 import { calculateScoreResult } from './scoring';
+import { externalResultToFinding } from './external-pi-adapter';
+import { DEFAULT_SCAN_OPTIONS } from './scan-policy';
+import type { MockFile, ScanOptions } from './scan-types';
+import { runExternalPIDetection } from './pi-pipeline';
+export type { MockFile } from './scan-types';
 
 export interface ScanReport {
   id: string;
@@ -34,77 +39,15 @@ export interface ScanReport {
     timeoutMs?: number;
     packageName?: string;
     packageVersion?: string;
+    /** V0.2.3.4: Additive scanner execution metadata */
+    scanners?: Array<{
+      name: "semgrep" | "gitleaks" | "pi-external" | "pi-local";
+      status: "ok" | "failed" | "skipped" | "fallback";
+      findings: number;
+      errorCode?: "scanner_not_available" | "scanner_timeout" | "scanner_exec_failed" | "scanner_invalid_output" | "scanner_network_error";
+      message?: string;
+    }>;
   };
-}
-
-export interface ScanOptions {
-  /**
-   * Maximum number of files to scan (for demo V0.1).
-   * Prevents scanning massive repos in demo phase.
-   */
-  maxFiles?: number;
-
-  /**
-   * File extensions to include in scan.
-   */
-  includeExtensions?: string[];
-
-  /**
-   * Directories to exclude from scan.
-   */
-  excludeDirs?: string[];
-}
-
-/**
- * Default scan options for V0.1 demo.
- */
-export const DEFAULT_SCAN_OPTIONS: ScanOptions = {
-  maxFiles: 100, // Reasonable limit for demo
-  includeExtensions: [
-    '.md',
-    '.markdown',
-    '.js',
-    '.ts',
-    '.jsx',
-    '.tsx',
-    '.py',
-    '.rb',
-    '.go',
-    '.java',
-    '.sh',
-    '.bash',
-    '.yml',
-    '.yaml',
-    '.json',
-    '.env',
-    '.env.example',
-    '.config',
-    '.conf',
-  ],
-  excludeDirs: [
-    'node_modules',
-    'vendor',
-    '.git',
-    'dist',
-    'build',
-    'coverage',
-    '.next',
-    '.nuxt',
-    'target',
-    'bin',
-    'obj',
-  ],
-};
-
-/**
- * Mock file system interface.
- *
- * In V0.1, this is a simplified interface.
- * Production would integrate with actual git clone and file system access.
- */
-export interface MockFile {
-  path: string;
-  content: string;
 }
 
 /**
@@ -164,11 +107,11 @@ export function sortFindings(findings: Finding[]): Finding[] {
  * @param options - Scan configuration options
  * @returns Complete scan report
  */
-export function runScan(
+export async function runScan(
   repoUrl: string,
   files: MockFile[],
   options: ScanOptions = {}
-): ScanReport {
+): Promise<ScanReport> {
   const opts = { ...DEFAULT_SCAN_OPTIONS, ...options };
   const scanId = generateScanId();
   const scannedAt = new Date().toISOString();
@@ -178,11 +121,92 @@ export function runScan(
     .filter(f => shouldIncludeFile(f.path, opts))
     .slice(0, opts.maxFiles || DEFAULT_SCAN_OPTIONS.maxFiles!);
 
-  // Run all rules on each file
+  // V0.2.3.4: Use pi-pipeline helper instead of direct detector registration
+  // Track scanner metadata across all files (accumulate findings, merge status by priority)
+  // V0.2.3.4: Aggregate PI findings across all files
+  let totalPIFindings = 0;
+  // Status priority (risk-first): failed > fallback > ok > skipped
+  const statusPriority: Record<string, number> = { failed: 4, fallback: 3, ok: 2, skipped: 1 };
+  let highestPriorityStatus: "ok" | "failed" | "fallback" | "skipped" | null = null;
+  let firstNonOkError: { errorCode?: string; message?: string } | null = null;
+
   const allFindings: Finding[] = [];
+
   for (const file of filesToScan) {
+    // V0.2.3.4: Use pi-pipeline helper for external PI detection
+    // Temporary interface for compatibility
+    let externalResult: {
+      detected: boolean;
+      method: 'external' | 'local';
+      ruleId?: 'PI-1-INSTRUCTION-OVERRIDE' | 'PI-2-PROMPT-SECRET-EXFIL';
+      snippet?: string;
+      line?: number;
+      error?: string;
+    } = {
+      detected: false,
+      method: 'local',
+    };
+
+    // External PI detection must never block baseline local scanning.
     try {
-      const findings = runAllRules(file.content, file.path);
+      const piResult = await runExternalPIDetection(file.content, file.path, {
+        enableExternal: opts.enableExternalPI,
+        fallbackToLocal: opts.fallbackToLocal,
+      });
+
+      // V0.2.3.4: Accumulate PI findings across all files
+      totalPIFindings += piResult.findings;
+
+      // V0.2.3.4: Track highest priority status across all files
+      if (!highestPriorityStatus || statusPriority[piResult.status] > statusPriority[highestPriorityStatus]) {
+        highestPriorityStatus = piResult.status;
+      }
+
+      // Track first non-ok error for diagnostic context
+      if (piResult.status !== 'ok' && !firstNonOkError) {
+        firstNonOkError = {
+          errorCode: piResult.errorCode,
+          message: piResult.message,
+        };
+      }
+
+      // Convert PI pipeline result to external result format for compatibility
+      externalResult = {
+        detected: piResult.findings > 0,
+        method: piResult.method,
+        ruleId: piResult.ruleId,
+        snippet: piResult.snippet,
+        line: piResult.line,
+        error: piResult.message,
+      };
+
+      // Convert to finding if detected
+      const externalFinding = externalResultToFinding(externalResult, file.path);
+      if (externalFinding) {
+        allFindings.push(externalFinding);
+      }
+    } catch (error) {
+      console.warn(`Failed to run external PI detection on ${file.path}, falling back to local rules:`, error);
+
+      // Track failed status for error case
+      if (!highestPriorityStatus || statusPriority.failed > statusPriority[highestPriorityStatus]) {
+        highestPriorityStatus = 'failed';
+      }
+      if (!firstNonOkError) {
+        firstNonOkError = {
+          errorCode: 'scanner_exec_failed',
+          message: error instanceof Error ? error.message.substring(0, 200) : 'Unknown error',
+        };
+      }
+    }
+
+    try {
+      // Only skip local PI rules when external path really executed.
+      const skipPIRules =
+        externalResult.method === 'external'
+          ? ['PI-1-INSTRUCTION-OVERRIDE', 'PI-2-PROMPT-SECRET-EXFIL']
+          : undefined;
+      const findings = runAllRules(file.content, file.path, skipPIRules);
       allFindings.push(...findings);
     } catch (error) {
       // Log but don't fail entire scan
@@ -196,6 +220,24 @@ export function runScan(
   // Calculate score
   const scoreResult = calculateScoreResult(allFindings);
 
+  // V0.2.3.4: Build aggregated PI scanner metadata
+  const scannersMetadata = [];
+  if (highestPriorityStatus) {
+    // Determine scanner name based on status
+    // - If status is 'ok', we used external method
+    // - If status is 'fallback', we fell back to local
+    // - If status is 'failed', could be either (use 'pi-local' as safe default)
+    const scannerName: "pi-external" | "pi-local" = highestPriorityStatus === 'ok' ? 'pi-external' : 'pi-local';
+
+    scannersMetadata.push({
+      name: scannerName,
+      status: highestPriorityStatus,
+      findings: totalPIFindings,
+      errorCode: firstNonOkError?.errorCode as ("scanner_not_available" | "scanner_timeout" | "scanner_exec_failed" | "scanner_invalid_output" | "scanner_network_error" | undefined),
+      message: firstNonOkError?.message,
+    });
+  }
+
   // Build report
   const report: ScanReport = {
     id: scanId,
@@ -205,8 +247,12 @@ export function runScan(
     status: scoreResult.status,
     summary: scoreResult.summary,
     findings: allFindings,
-    engineVersion: 'v0.2.2',
+    engineVersion: 'v0.2.3', // Updated version
     scannedAt,
+    scanMeta: {
+      // V0.2.3.4: Additive scanner metadata with aggregated PI status
+      scanners: scannersMetadata.length > 0 ? scannersMetadata : undefined,
+    },
   };
 
   return report;
@@ -239,7 +285,7 @@ export function runScanOnFile(
     status: scoreResult.status,
     summary: scoreResult.summary,
     findings,
-    engineVersion: 'v0.2.2',
+    engineVersion: 'v0.2.3',
     scannedAt,
   };
 }
