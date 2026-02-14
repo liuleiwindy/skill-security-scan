@@ -10,6 +10,7 @@ import {
   isIOSSafari,
   isWeChatWebView,
 } from "@/lib/mobile-share";
+import { openWeChatImagePreview } from "@/lib/wechat-save";
 import {
   fetchImageAsFile,
   sanitizeFileName,
@@ -148,6 +149,18 @@ export function SaveButton({
     const supportsShare = canShareFiles();
 
     try {
+      // WeChat webview: open native image preview directly (best available save UX)
+      if (isWeChatWebView()) {
+        console.log('WeChat webview detected, opening native image preview');
+        await openWeChatImagePreview(posterUrl);
+        setState('saved');
+        onSaveSuccess?.();
+        setTimeout(() => {
+          setState('idle');
+        }, 1200);
+        return;
+      }
+
       // iOS Safari: Web Share file support limited, use fallback
       if (isIOS && !supportsShare) {
         console.log('iOS Safari without Web Share file support, showing fallback');
