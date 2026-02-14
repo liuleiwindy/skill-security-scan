@@ -13,6 +13,7 @@
   - `v0.2.4.1` data/API integration
   - `v0.2.4.2` poster page + save flow
   - `v0.2.4.3` stabilization and release gate
+  - `v0.2.4.4` telemetry and analytics integration
 
 ## 1. Objective
 
@@ -67,7 +68,10 @@ Detailed technical design is maintained in slice specs, starting with:
 ### 5.3 V0.2.4.2 - Poster Page Integration
 
 - integrate generated image into `/scan/poster/[id]`
-- add one-click save with browser fallback
+- no query override preview on page route
+- add mobile-first one-click save with browser fallback
+- use placeholder-first loading (LQIP/static fallback before full poster image)
+- keep share target as `/scan/poster/[id]` and QR target fixed to `/scan/report/[id]`
 
 ### 5.4 V0.2.4.3 - Stabilization and Release Gate
 
@@ -78,6 +82,12 @@ Detailed technical design is maintained in slice specs, starting with:
 - cross-environment render consistency policy:
   - same-runner determinism uses strict hash equality
   - cross-environment determinism (local vs Vercel / Chromium version drift) uses pixel-diff thresholds instead of hash equality
+
+### 5.5 V0.2.4.4 - Telemetry and Analytics Integration
+
+- add poster page telemetry events
+- add backend ingestion and persistence pipeline
+- add telemetry quality checks and minimal reporting
 
 ## 6. Master Acceptance Criteria
 

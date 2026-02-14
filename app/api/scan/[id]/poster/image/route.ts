@@ -18,13 +18,13 @@ import { validateScanId } from '@/lib/validation';
 import { getStoredReport } from '@/lib/store';
 import { renderPoster } from '@/lib/poster/render-poster';
 import {
-  createPosterModelFromScanReport,
   type RenderOptions,
-  type PosterRenderModel,
   getGradeForScore,
   getColorForGrade,
   loadGradeConfig,
 } from '@/lib/poster/render-options';
+import { createPosterModelFromScanReport } from '@/lib/poster/model-mapper';
+import type { PosterRenderModel } from '@/lib/poster/poster-types';
 import {
   parsePosterQueryOverrides,
   generateRequestId,
@@ -189,6 +189,13 @@ export async function GET(
     // Map report to poster model
     const posterModel: PosterRenderModel =
       createPosterModelFromScanReport(report);
+    const protocol = request.headers.get("x-forwarded-proto") || "https";
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+    if (host) {
+      posterModel.qrUrl = `${protocol}://${host}/scan/report/${id}`;
+    } else if (typeof posterModel.qrUrl === "string" && posterModel.qrUrl.startsWith("/")) {
+      posterModel.qrUrl = `https://localhost:3000${posterModel.qrUrl}`;
+    }
 
     // Convert query overrides to render options (with score consistency)
     const renderOptions = queryOverridesToRenderOptions(parseResult.overrides);

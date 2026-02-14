@@ -16,7 +16,7 @@
 
 1. Implement poster domain mapper
    - Status: **completed** ✅
-   - Output: `lib/poster/render-options.ts` (createPosterModelFromScanReport)
+   - Output: `lib/poster/render-options.ts` (createPosterModelFromScanReport + deterministic beatsRatio rule)
 
 2. Wire poster image API
    - Status: **completed** ✅

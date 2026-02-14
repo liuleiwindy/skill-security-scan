@@ -1,78 +1,80 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { headers } from "next/headers";
-import styles from "./poster.module.css";
-import { generateQRCode, getReportUrl } from "@/lib/qr";
-import { getStoredReport } from "@/lib/store";
+import type { Metadata } from "next";
+import { PosterPageContent } from "./PosterPageContent";
 
-function statusLabel(status: "safe" | "needs_review" | "risky") {
-  if (status === "safe") return "PASS";
-  if (status === "needs_review") return "REVIEW";
-  return "RISK";
+/**
+ * Poster Page V0.2.4.2 - Base Structure
+ * 
+ * Task 1.1: Create `/scan/poster/[id]` route structure
+ * 
+ * This page provides the foundation for:
+ * - Rendering generated poster image from /api/scan/:id/poster/image
+ * - Mobile-first save-to-local interaction
+ * - Share handoff to report via QR code
+ */
+
+/**
+ * Basic validation for scan ID format
+ * 
+ * @param id - The scan ID to validate
+ * @returns true if the ID appears valid, false otherwise
+ */
+function isValidScanId(id: string): boolean {
+  // Basic validation: non-empty string, reasonable length
+  if (!id || typeof id !== "string") return false;
+  
+  // Should be at least 1 character and not excessively long
+  const trimmedId = id.trim();
+  return trimmedId.length > 0 && trimmedId.length <= 100;
 }
 
+/**
+ * Generate page metadata based on scan ID
+ * 
+ * @param scanId - The scan ID
+ * @returns Next.js metadata object
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  
+  return {
+    title: `Security Scan Poster - ${id}`,
+    description: "View and save your security scan poster",
+    openGraph: {
+      title: `Security Scan Poster - ${id}`,
+      description: "View and save your security scan poster",
+      type: "website",
+    },
+  };
+}
+
+/**
+ * Poster Page Component
+ *
+ * Renders the poster page with:
+ * - Header: Back navigation
+ * - Main Content: Poster image + Save button (Task 4.1 & 4.2)
+ * - Footer: Simple copyright (optional)
+ *
+ * @param params - Route parameters containing the scan ID
+ * @returns The poster page component
+ */
 export default async function PosterPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const report = await getStoredReport(id);
+  const scanId = id;
 
-  if (!report) {
-    notFound();
+  // Validate scan ID format
+  if (!isValidScanId(scanId)) {
+    throw new Error("Invalid scan ID format");
   }
 
-  const reqHeaders = await headers();
-  const protocol = reqHeaders.get("x-forwarded-proto") || "https";
-  const host = reqHeaders.get("x-forwarded-host") || reqHeaders.get("host");
-  const baseUrl = host ? `${protocol}://${host}` : undefined;
-  const qrCode = await generateQRCode(getReportUrl(id, baseUrl), { size: 140, margin: 1 });
-  const totalIssues = report.summary.critical + report.summary.high + report.summary.medium + report.summary.low;
-
-  return (
-    <main className={styles.posterContainer}>
-      <nav className={styles.posterNav}>
-        <Link href={`/scan/report/${id}`} className={styles.navLinkPrimary}>
-          ← Back to Report
-        </Link>
-        <Link href="/scan" className={styles.navLink}>
-          New Scan
-        </Link>
-      </nav>
-
-      <article className={styles.posterCard}>
-        <header className={styles.header}>
-          <p className={styles.brand}>Skill Security Scan</p>
-          <p className={styles.date}>{new Date(report.scannedAt).toLocaleDateString()}</p>
-        </header>
-
-        <section className={styles.hero}>
-          <p className={styles.grade}>{report.grade}</p>
-          <p className={styles.score}>{report.score}</p>
-          <p className={styles.status}>{statusLabel(report.status)}</p>
-        </section>
-
-        <section className={styles.summary}>
-          <p className={styles.repo}>{report.repoUrl.replace(/^https?:\/\//, "")}</p>
-          <p className={styles.summaryLine}>Issues: {totalIssues} · Engine {report.engineVersion}</p>
-        </section>
-
-        <footer className={styles.footer}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qrCode} alt="Report QR" className={styles.qr} />
-          <p className={styles.cta}>Scan to open full report</p>
-          <div className={styles.footerActions}>
-            <Link href={`/scan/report/${id}`} className={styles.footerLink}>
-              Open Report
-            </Link>
-            <Link href="/scan" className={styles.footerLink}>
-              Scan Another Repo
-            </Link>
-          </div>
-          <p className={styles.brandHint}>BRAND_TBD</p>
-        </footer>
-      </article>
-    </main>
-  );
+  // Render client-side component that handles interactivity
+  return <PosterPageContent scanId={scanId} />;
 }

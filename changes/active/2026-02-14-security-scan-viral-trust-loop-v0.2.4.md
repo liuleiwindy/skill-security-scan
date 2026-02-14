@@ -32,10 +32,13 @@
      - backward compatibility of `GET /api/scan/:id/poster`
 
 3. `M3 / v0.2.4.2` - Poster page and save flow
-   - Status: pending
+   - Status: in_progress
    - Deliverables:
      - `/scan/poster/[id]` image endpoint integration
-     - one-click save button + fallback
+     - no query override preview behavior on poster page
+     - mobile-first save button + fallback
+     - placeholder-first loading experience
+     - poster-page share target + QR-to-report handoff
      - e2e path validation
 
 4. `M4 / v0.2.4.3` - Stabilization and release gate
@@ -46,6 +49,13 @@
      - build/test/perf release checks
      - production stability gate (memory/error-rate/rollback criteria)
      - cross-environment visual consistency gate (same-runner hash equality + cross-runner pixel diff threshold)
+
+5. `M5 / v0.2.4.4` - Telemetry and analytics integration
+   - Status: pending
+   - Deliverables:
+     - poster page telemetry events
+     - telemetry ingestion + Postgres persistence
+     - telemetry data quality checks and baseline reporting
 
 ## 3. Execution Tasks
 
@@ -67,7 +77,7 @@
    - Output: `app/api/scan/[id]/poster/image/route.ts`
 
 5. Integrate poster page image + save CTA
-   - Status: pending
+   - Status: in_progress
    - Output: updates under `app/scan/poster/[id]/`
 
 6. Add tests and regression assets
@@ -117,3 +127,4 @@
 6. Grade range/color mapping is sourced from config file instead of env.
 7. QR in generated poster is scannable to the expected report URL.
 8. `npm test` and `npm run build` pass.
+9. Telemetry integration is delivered in `v0.2.4.4` without blocking poster UX ship.

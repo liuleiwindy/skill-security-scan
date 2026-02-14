@@ -2,7 +2,11 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type { MockFile, ScanOptions } from "./scan-types";
-import { DEFAULT_SCAN_OPTIONS, GITHUB_DEFAULT_TIMEOUT_MS, GITHUB_DEFAULT_MAX_FILE_BYTES } from "./scan-policy";
+import {
+  DEFAULT_SCAN_OPTIONS,
+  GITHUB_DEFAULT_MAX_FILE_BYTES,
+  getDefaultIntakeTimeoutMs,
+} from "./scan-policy";
 
 export type RepoFetchErrorCode =
   | "repo_not_found"
@@ -53,6 +57,26 @@ type GitHubTreeItem = {
   size?: number;
   sha?: string;
 };
+
+function parsePositiveInt(value: string | undefined, fallback: number): number {
+  const parsed = Number.parseInt(value ?? "", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+/**
+ * Blob fetch concurrency policy
+ *
+ * - Base concurrency is configured by SCAN_GITHUB_BLOB_CONCURRENCY (default 4)
+ * - For large selections, automatically increase concurrency to improve throughput
+ */
+function resolveBlobFetchConcurrency(selectedCount: number): number {
+  const base = parsePositiveInt(process.env.SCAN_GITHUB_BLOB_CONCURRENCY, 4);
+  const maxConcurrency = 12;
+  const largeRepoThreshold = 60;
+  const largeRepoConcurrency = Math.min(base * 2, maxConcurrency);
+  const resolved = selectedCount >= largeRepoThreshold ? largeRepoConcurrency : base;
+  return Math.max(1, Math.min(resolved, maxConcurrency));
+}
 
 function buildGitHubHeaders(): Record<string, string> {
   const token = process.env.GITHUB_TOKEN?.trim();
@@ -200,7 +224,7 @@ export async function fetchGitHubRepoFiles(
   repoUrl: string,
   options: GitHubFetchOptions = {},
 ): Promise<GitHubFetchResult> {
-  const timeoutMs = options.timeoutMs ?? GITHUB_DEFAULT_TIMEOUT_MS;
+  const timeoutMs = options.timeoutMs ?? getDefaultIntakeTimeoutMs();
   const maxFileBytes = options.maxFileBytes ?? GITHUB_DEFAULT_MAX_FILE_BYTES;
   const normalizedOptions: ScanOptions = {
     maxFiles: options.maxFiles ?? DEFAULT_SCAN_OPTIONS.maxFiles ?? 100,
@@ -210,109 +234,146 @@ export async function fetchGitHubRepoFiles(
     fallbackToLocal: DEFAULT_SCAN_OPTIONS.fallbackToLocal ?? true,
   };
   const deadline = Date.now() + timeoutMs;
+  const timeoutMessage = (lastBudgetMs: number) =>
+    `Scan timed out after ${timeoutMs}ms (last request budget: ${Math.max(1, Math.floor(lastBudgetMs))}ms)`;
   const remainingTimeoutMs = () => {
     const remaining = deadline - Date.now();
     if (remaining <= 0) {
-      throw new RepoFetchError("scan_timeout", `Scan timed out after ${timeoutMs}ms`);
+      throw new RepoFetchError("scan_timeout", timeoutMessage(0));
     }
     return remaining;
   };
 
-  const normalizedSubPaths = (options.subPaths || [])
-    .map((subPath) => subPath.trim().replace(/^\/+|\/+$/g, ""))
-    .filter(Boolean);
+  try {
+    const normalizedSubPaths = (options.subPaths || [])
+      .map((subPath) => subPath.trim().replace(/^\/+|\/+$/g, ""))
+      .filter(Boolean);
 
-  const parsed = parseGitHubRepoUrl(repoUrl);
-  const repoMeta = await fetchJson<{ default_branch: string }>(
-    `https://api.github.com/repos/${parsed.owner}/${parsed.repo}`,
-    remainingTimeoutMs(),
-  );
-  const ref = parsed.ref || repoMeta.default_branch;
-  const treePayload = await fetchJson<{ tree?: GitHubTreeItem[] }>(
-    `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/git/trees/${encodeURIComponent(ref)}?recursive=1`,
-    remainingTimeoutMs(),
-  );
-  if (!Array.isArray(treePayload.tree)) {
-    throw new RepoFetchError("repo_fetch_failed", "Repository tree response is invalid");
-  }
+    const parsed = parseGitHubRepoUrl(repoUrl);
+    const repoMeta = await fetchJson<{ default_branch: string }>(
+      `https://api.github.com/repos/${parsed.owner}/${parsed.repo}`,
+      remainingTimeoutMs(),
+    );
+    const ref = parsed.ref || repoMeta.default_branch;
+    const treePayload = await fetchJson<{ tree?: GitHubTreeItem[] }>(
+      `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/git/trees/${encodeURIComponent(ref)}?recursive=1`,
+      remainingTimeoutMs(),
+    );
+    if (!Array.isArray(treePayload.tree)) {
+      throw new RepoFetchError("repo_fetch_failed", "Repository tree response is invalid");
+    }
 
-  const candidateBlobs = treePayload.tree
-    .filter((item) => item.type === "blob")
-    .filter((item) => {
-      if (normalizedSubPaths.length > 0) {
-        return normalizedSubPaths.some(
-          (subPath) => item.path === subPath || item.path.startsWith(`${subPath}/`),
-        );
-      }
-      if (!parsed.subPath) return true;
-      return item.path === parsed.subPath || item.path.startsWith(`${parsed.subPath}/`);
-    })
-    .filter((item) => (item.size ?? 0) <= maxFileBytes);
+    const candidateBlobs = treePayload.tree
+      .filter((item) => item.type === "blob")
+      .filter((item) => {
+        if (normalizedSubPaths.length > 0) {
+          return normalizedSubPaths.some(
+            (subPath) => item.path === subPath || item.path.startsWith(`${subPath}/`),
+          );
+        }
+        if (!parsed.subPath) return true;
+        return item.path === parsed.subPath || item.path.startsWith(`${parsed.subPath}/`);
+      })
+      .filter((item) => (item.size ?? 0) <= maxFileBytes);
 
-  const selectedByExtension = candidateBlobs
-    .filter((item) => includeFileByScanOptions(item.path, normalizedOptions))
-    .slice(0, normalizedOptions.maxFiles);
+    const selectedByExtension = candidateBlobs
+      .filter((item) => includeFileByScanOptions(item.path, normalizedOptions))
+      .slice(0, normalizedOptions.maxFiles);
 
   // Fallback: when extension filters match nothing (common in skill repos with docs-only subpaths),
   // still try bounded text-blob scanning and let binary/null-byte checks skip non-text files.
-  const selected =
-    selectedByExtension.length > 0
-      ? selectedByExtension
-      : candidateBlobs.slice(0, normalizedOptions.maxFiles);
+    const selected =
+      selectedByExtension.length > 0
+        ? selectedByExtension
+        : candidateBlobs.slice(0, normalizedOptions.maxFiles);
 
-  if (selected.length === 0) {
-    throw new RepoFetchError("repo_fetch_failed", "No scannable files found in repository");
-  }
-
-  const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "skill-scan-"));
-  let filesSkipped = 0;
-  const files: MockFile[] = [];
-
-  for (const item of selected) {
-    if ((item.size ?? 0) === 0) {
-      filesSkipped += 1;
-      continue;
+    if (selected.length === 0) {
+      throw new RepoFetchError("repo_fetch_failed", "No scannable files found in repository");
     }
-    if (!item.sha) {
-      filesSkipped += 1;
-      continue;
-    }
-    let content: string | null;
-    try {
-      content = await fetchBlobUtf8(parsed.owner, parsed.repo, item.sha, remainingTimeoutMs());
-    } catch (error) {
-      if ((error as { code?: string } | undefined)?.code === "repo_fetch_failed") {
-        filesSkipped += 1;
-        continue;
+
+    const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "skill-scan-"));
+    let filesSkipped = 0;
+    const orderedFiles: Array<MockFile | null> = new Array(selected.length).fill(null);
+    const workerCount = resolveBlobFetchConcurrency(selected.length);
+    let nextIndex = 0;
+    let fatalError: unknown = null;
+
+    const worker = async () => {
+      while (true) {
+        if (fatalError) return;
+        const index = nextIndex;
+        nextIndex += 1;
+        if (index >= selected.length) return;
+
+        const item = selected[index];
+        if ((item.size ?? 0) === 0) {
+          filesSkipped += 1;
+          continue;
+        }
+        if (!item.sha) {
+          filesSkipped += 1;
+          continue;
+        }
+
+        let content: string | null;
+        try {
+          content = await fetchBlobUtf8(parsed.owner, parsed.repo, item.sha, remainingTimeoutMs());
+        } catch (error) {
+          if ((error as { code?: string } | undefined)?.code === "repo_fetch_failed") {
+            filesSkipped += 1;
+            continue;
+          }
+          fatalError = error;
+          return;
+        }
+
+        if (!content || content.includes("\u0000")) {
+          filesSkipped += 1;
+          continue;
+        }
+
+        const fullPath = path.join(workspaceDir, item.path);
+        try {
+          await fs.mkdir(path.dirname(fullPath), { recursive: true });
+          await fs.writeFile(fullPath, content, "utf8");
+        } catch (error) {
+          fatalError = error;
+          return;
+        }
+
+        orderedFiles[index] = { path: item.path, content };
       }
-      throw error;
-    }
-    if (!content) {
-      filesSkipped += 1;
-      continue;
-    }
-    if (content.includes("\u0000")) {
-      filesSkipped += 1;
-      continue;
-    }
-    files.push({ path: item.path, content: content! });
+    };
 
-    const fullPath = path.join(workspaceDir, item.path);
-    await fs.mkdir(path.dirname(fullPath), { recursive: true });
-    await fs.writeFile(fullPath, content!, "utf8");
-  }
-
-  if (files.length === 0) {
-    await fs.rm(workspaceDir, { recursive: true, force: true });
-    throw new RepoFetchError("repo_fetch_failed", "No text files available for scanning");
-  }
-
-  return {
-    files,
-    workspaceDir,
-    filesSkipped,
-    cleanup: async () => {
+    await Promise.all(Array.from({ length: workerCount }, () => worker()));
+    if (fatalError) {
       await fs.rm(workspaceDir, { recursive: true, force: true });
-    },
-  };
+      throw fatalError;
+    }
+
+    const files = orderedFiles.filter((file): file is MockFile => file !== null);
+
+    if (files.length === 0) {
+      await fs.rm(workspaceDir, { recursive: true, force: true });
+      throw new RepoFetchError("repo_fetch_failed", "No text files available for scanning");
+    }
+
+    return {
+      files,
+      workspaceDir,
+      filesSkipped,
+      cleanup: async () => {
+        await fs.rm(workspaceDir, { recursive: true, force: true });
+      },
+    };
+  } catch (error) {
+    if (
+      error instanceof RepoFetchError &&
+      error.code === "scan_timeout" &&
+      /Scan timed out after \d+ms$/.test(error.message)
+    ) {
+      throw new RepoFetchError("scan_timeout", timeoutMessage(deadline - Date.now()));
+    }
+    throw error;
+  }
 }

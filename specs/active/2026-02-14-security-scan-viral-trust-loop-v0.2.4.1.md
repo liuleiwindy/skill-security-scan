@@ -55,6 +55,11 @@ export interface ScanReport {
   summary: { critical: number; high: number; medium: number; low: number };
   scannedAt: string;
   engineVersion: string;
+  scanMeta?: {
+    source?: string;
+    packageName?: string;
+    packageVersion?: string;
+  };
 }
 
 export interface PosterRenderModel {
@@ -135,6 +140,42 @@ Error response shape (all poster API errors):
    - `grade -> color` via config color
 3. query override color (if provided and valid) can replace default progress color only for that request.
 
+### 4.5.1 Beats Ratio (Deterministic Placeholder Rule)
+
+Before real percentile ranking is available, `beatsRatio` uses deterministic pseudo-random generation.
+
+1. Purpose:
+   - provide socially meaningful placeholder value
+   - avoid unstable random changes between refreshes
+2. Determinism:
+   - seed inputs: `scanId + score + grade`
+   - same seed must always produce same `beatsRatio`
+3. Grade ranges:
+   - `A`: `85-99`
+   - `B`: `65-84`
+   - `C`: `35-64`
+   - `D`: `5-34`
+4. Output format:
+   - percentage string like `"78%"`
+5. Forward plan:
+   - replace this module with real ranking percentile after enough scan history is accumulated
+   - keep output field name unchanged (`beatsRatio`) for compatibility
+
+### 4.5.2 Proof/Repo/QR Mapping Rules
+
+1. Proof time formatting:
+   - input source: `ScanReport.scannedAt`
+   - output format: `YYYY-MM-DD HH:mm UTC`
+   - timezone policy: always UTC, not local timezone dependent
+2. `repoValue` mapping:
+   - GitHub scan: render `owner/repo` style path
+   - npm/npx scan: prefer `packageName@version` from `scanMeta`, fallback to `packageName`
+   - final fallback: sanitized `repoUrl` text
+3. `qrUrl` policy:
+   - no short-link module in V0.2.4.1
+   - target route fixed to report detail `/scan/report/{id}`
+   - image endpoint runtime should resolve absolute URL using current request host when available
+
 ### 4.6 Runtime and Deployment Notes
 
 1. local:
@@ -170,6 +211,10 @@ This slice does not require full release gate thresholds; those belong to `v0.2.
 2. mapping tests
    - score boundary cases: `39/40/59/60/79/80/100`
    - expected grade and default color derived from config
+   - `beatsRatio` deterministic placeholder rule (stable + in-grade range)
+   - proof time UTC formatting is stable for offset timestamps
+   - repoValue mapping for GitHub vs npm (`packageName@version` fallback chain)
+   - qrUrl maps to report route (no short-link path)
 3. integration tests
    - same input deterministic output hash
    - generated QR decodes to expected report URL

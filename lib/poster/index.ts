@@ -14,20 +14,21 @@ export type {
   RenderOptions,
   GradeConfig,
   GradeConfigEntry,
-  ResolvedRenderOptions,
   PenNode,
   PenDoc,
   PenFill,
   PenEffect,
   ProgressNodes,
   TextOverrides,
-} from "./render-options.js";
+} from "./poster-types.js";
 
 // Render options utilities
 export {
+  type ResolvedRenderOptions,
   loadGradeConfig,
   getGradeForScore,
   getColorForGrade,
+  deriveDeterministicBeatsRatio,
   parseScorePercent,
   normalizeMultilineText,
   normalizeHexColor,
@@ -38,9 +39,13 @@ export {
   mapFontWeight,
   getAlignX,
   getAlignY,
+} from "./render-options.js";
+
+// Report -> model mapping
+export {
   DEFAULT_POSTER_MODEL,
   createPosterModelFromScanReport,
-} from "./render-options.js";
+} from "./model-mapper.js";
 
 // Core renderer
 export {

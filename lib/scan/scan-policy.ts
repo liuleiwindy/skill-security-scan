@@ -65,6 +65,20 @@ export const NPM_DEFAULT_MAX_TARBALL_BYTES = 10 * 1024 * 1024;
 export const NPM_DEFAULT_MAX_EXTRACTED_FILES = 300;
 export const NPM_DEFAULT_MAX_FILE_BYTES = 300 * 1024;
 
+function parsePositiveInt(value: string | undefined, fallback: number): number {
+  const parsed = Number.parseInt(value ?? "", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+/**
+ * Unified intake timeout for GitHub and npm source collection.
+ *
+ * Override with `SCAN_INTAKE_TIMEOUT_MS`, fallback to existing 25s policy.
+ */
+export function getDefaultIntakeTimeoutMs(): number {
+  return parsePositiveInt(process.env.SCAN_INTAKE_TIMEOUT_MS, GITHUB_DEFAULT_TIMEOUT_MS);
+}
+
 /**
  * skills add GitHub dynamic scope controls
  * previously defined in store.ts
@@ -82,4 +96,3 @@ export function prioritizeSkillRoots(skillRoots: string[], maxRoots: number): st
   });
   return unique.slice(0, maxRoots);
 }
-

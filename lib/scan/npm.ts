@@ -5,10 +5,10 @@ import { execFile } from "node:child_process";
 import type { MockFile, ScanOptions } from "./scan-types";
 import {
   DEFAULT_SCAN_OPTIONS,
-  NPM_DEFAULT_TIMEOUT_MS,
   NPM_DEFAULT_MAX_TARBALL_BYTES,
   NPM_DEFAULT_MAX_EXTRACTED_FILES,
   NPM_DEFAULT_MAX_FILE_BYTES,
+  getDefaultIntakeTimeoutMs,
 } from "./scan-policy";
 import { RepoFetchError } from "./github";
 
@@ -512,7 +512,7 @@ function execTar(args: string[], timeoutMs: number, encoding: BufferEncoding | "
 }
 
 export async function fetchNpmPackageFiles(input: string, options: NpmFetchOptions = {}): Promise<NpmFetchResult> {
-  const timeoutMs = options.timeoutMs ?? NPM_DEFAULT_TIMEOUT_MS;
+  const timeoutMs = options.timeoutMs ?? getDefaultIntakeTimeoutMs();
   const maxTarballBytes = options.maxTarballBytes ?? NPM_DEFAULT_MAX_TARBALL_BYTES;
   const maxExtractedFiles = options.maxExtractedFiles ?? NPM_DEFAULT_MAX_EXTRACTED_FILES;
   const maxFileBytes = options.maxFileBytes ?? NPM_DEFAULT_MAX_FILE_BYTES;

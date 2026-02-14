@@ -59,7 +59,7 @@ function getIntakeDeps(): IntakeDeps {
 async function withTimeout<T>(fn: () => Promise<T>, timeoutMs: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
-      reject(new RepoFetchError('scan_timeout', 'Scan timeout exceeded'));
+      reject(new RepoFetchError('scan_timeout', `Scan timed out after ${timeoutMs}ms (hard timeout)`));
     }, timeoutMs);
 
     fn()

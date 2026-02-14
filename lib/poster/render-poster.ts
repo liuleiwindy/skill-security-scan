@@ -14,13 +14,6 @@ import path from "node:path";
 import { chromium, type Browser } from "playwright-core";
 import QRCode from "qrcode";
 import {
-  type PosterRenderModel,
-  type RenderOptions,
-  type GradeConfig,
-  type PenNode,
-  type PenDoc,
-  type ProgressNodes,
-  type TextOverrides,
   loadGradeConfig,
   resolveRenderOptions,
   normalizeHexColor,
@@ -32,6 +25,15 @@ import {
   getAlignY,
   clamp,
 } from "./render-options";
+import type {
+  GradeConfig,
+  PenDoc,
+  PenNode,
+  PosterRenderModel,
+  ProgressNodes,
+  RenderOptions,
+  TextOverrides,
+} from "./poster-types";
 
 // ============================================================================
 // Constants

@@ -7,7 +7,6 @@ vi.mock("@/lib/store", () => ({
 }));
 
 vi.mock("@/lib/poster/render-options", () => ({
-  createPosterModelFromScanReport: vi.fn(),
   getGradeForScore: vi.fn((score: number) => {
     if (score >= 80) return "A";
     if (score >= 60) return "B";
@@ -31,6 +30,10 @@ vi.mock("@/lib/poster/render-options", () => ({
   })),
 }));
 
+vi.mock("@/lib/poster/model-mapper", () => ({
+  createPosterModelFromScanReport: vi.fn(),
+}));
+
 vi.mock("@/lib/poster/render-poster", () => ({
   renderPoster: vi.fn(),
 }));
@@ -42,8 +45,8 @@ const routeFilePath = path.resolve(
 
 const describeIfRouteExists = fs.existsSync(routeFilePath) ? describe : describe.skip;
 
-function makeNextRequest(url: string): Request {
-  const req = new Request(url);
+function makeNextRequest(url: string, init?: RequestInit): Request {
+  const req = new Request(url, init);
   return Object.assign(req, { nextUrl: new URL(url) }) as Request;
 }
 
@@ -54,12 +57,12 @@ describeIfRouteExists("v0.2.4.1 poster image route contract", () => {
 
   it("returns 200 + image/png + cache header on success", async () => {
     const storeModule = await import("@/lib/store");
-    const optionsModule = await import("@/lib/poster/render-options");
+    const mapperModule = await import("@/lib/poster/model-mapper");
     const renderModule = await import("@/lib/poster/render-poster");
     const { GET } = await import("@/app/api/scan/[id]/poster/image/route");
 
     const mockGetStoredReport = vi.mocked(storeModule.getStoredReport);
-    const mockCreatePosterModel = vi.mocked(optionsModule.createPosterModelFromScanReport);
+    const mockCreatePosterModel = vi.mocked(mapperModule.createPosterModelFromScanReport);
     const mockRenderPoster = vi.mocked(renderModule.renderPoster);
 
     mockGetStoredReport.mockResolvedValue({
@@ -120,12 +123,12 @@ describeIfRouteExists("v0.2.4.1 poster image route contract", () => {
 
   it("keeps score text and ring progress consistent when ?score=90", async () => {
     const storeModule = await import("@/lib/store");
-    const optionsModule = await import("@/lib/poster/render-options");
+    const mapperModule = await import("@/lib/poster/model-mapper");
     const renderModule = await import("@/lib/poster/render-poster");
     const { GET } = await import("@/app/api/scan/[id]/poster/image/route");
 
     const mockGetStoredReport = vi.mocked(storeModule.getStoredReport);
-    const mockCreatePosterModel = vi.mocked(optionsModule.createPosterModelFromScanReport);
+    const mockCreatePosterModel = vi.mocked(mapperModule.createPosterModelFromScanReport);
     const mockRenderPoster = vi.mocked(renderModule.renderPoster);
 
     mockGetStoredReport.mockResolvedValue({
@@ -189,14 +192,86 @@ describeIfRouteExists("v0.2.4.1 poster image route contract", () => {
     expect(renderOptions?.progressBarColor).toBe("#7dffb1");
   });
 
-  it("applies explicit ?progressBarColor override", async () => {
+  it("overrides model qrUrl to absolute report URL using request host", async () => {
     const storeModule = await import("@/lib/store");
-    const optionsModule = await import("@/lib/poster/render-options");
+    const mapperModule = await import("@/lib/poster/model-mapper");
     const renderModule = await import("@/lib/poster/render-poster");
     const { GET } = await import("@/app/api/scan/[id]/poster/image/route");
 
     const mockGetStoredReport = vi.mocked(storeModule.getStoredReport);
-    const mockCreatePosterModel = vi.mocked(optionsModule.createPosterModelFromScanReport);
+    const mockCreatePosterModel = vi.mocked(mapperModule.createPosterModelFromScanReport);
+    const mockRenderPoster = vi.mocked(renderModule.renderPoster);
+
+    mockGetStoredReport.mockResolvedValue({
+      id: "scan_contract",
+      repoUrl: "https://github.com/facebook/react",
+      score: 69,
+      summary: { critical: 1, high: 2, medium: 0, low: 0 },
+      findings: [],
+      engineVersion: "v0.2.4",
+      scannedAt: "2026-02-14 14:32 UTC",
+      grade: "B",
+      status: "needs_review",
+    } as never);
+
+    mockCreatePosterModel.mockReturnValue({
+      id: "scan_contract",
+      header: "SYSTEM INTEGRITY CHECK // REPORT",
+      proof: "PROOF ID: X9K2 · 2026-02-14 14:32 UTC",
+      repoLabel: "REPO:",
+      repoValue: "facebook/react",
+      grade: "B",
+      scoreText: "SCORE\\n69/100",
+      beatsText: "BEATS\\nOF REPOS",
+      beatsRatio: "78%",
+      criticalLabel: "CRITICAL",
+      criticalNumber: "[ 1 ]",
+      highLabel: "HIGH",
+      highNumber: "[ 2 ]",
+      mediumLabel: "MEDIUM",
+      mediumNumber: "[ 0 ]",
+      lowLabel: "LOW",
+      lowNumber: "[ 0 ]",
+      cta: "> SCAN TO VERIFY REPORT DETAILS <",
+      short: "POWERED BY MYSKILL.AI",
+      qrUrl: "/scan/report/scan_contract",
+    } as never);
+
+    mockRenderPoster.mockResolvedValue({
+      success: true,
+      buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+      dimensions: { width: 687, height: 1024 },
+    });
+
+    const req = makeNextRequest(
+      "http://localhost/api/scan/scan_contract/poster/image",
+      {
+        headers: {
+          "x-forwarded-proto": "https",
+          "x-forwarded-host": "skill-security-scan.vercel.app",
+        },
+      }
+    );
+
+    const res = await GET(req as never, {
+      params: Promise.resolve({ id: "scan_contract" }),
+    });
+
+    expect(res.status).toBe(200);
+    const modelArg = mockRenderPoster.mock.calls[0]?.[0] as { qrUrl?: string } | undefined;
+    expect(modelArg?.qrUrl).toBe(
+      "https://skill-security-scan.vercel.app/scan/report/scan_contract"
+    );
+  });
+
+  it("applies explicit ?progressBarColor override", async () => {
+    const storeModule = await import("@/lib/store");
+    const mapperModule = await import("@/lib/poster/model-mapper");
+    const renderModule = await import("@/lib/poster/render-poster");
+    const { GET } = await import("@/app/api/scan/[id]/poster/image/route");
+
+    const mockGetStoredReport = vi.mocked(storeModule.getStoredReport);
+    const mockCreatePosterModel = vi.mocked(mapperModule.createPosterModelFromScanReport);
     const mockRenderPoster = vi.mocked(renderModule.renderPoster);
 
     mockGetStoredReport.mockResolvedValue({
@@ -282,12 +357,12 @@ describeIfRouteExists("v0.2.4.1 poster image route contract", () => {
 
   it("returns 500 + no-store when render fails", async () => {
     const storeModule = await import("@/lib/store");
-    const optionsModule = await import("@/lib/poster/render-options");
+    const mapperModule = await import("@/lib/poster/model-mapper");
     const renderModule = await import("@/lib/poster/render-poster");
     const { GET } = await import("@/app/api/scan/[id]/poster/image/route");
 
     const mockGetStoredReport = vi.mocked(storeModule.getStoredReport);
-    const mockCreatePosterModel = vi.mocked(optionsModule.createPosterModelFromScanReport);
+    const mockCreatePosterModel = vi.mocked(mapperModule.createPosterModelFromScanReport);
     const mockRenderPoster = vi.mocked(renderModule.renderPoster);
 
     mockGetStoredReport.mockResolvedValue({
@@ -319,5 +394,26 @@ describeIfRouteExists("v0.2.4.1 poster image route contract", () => {
     expect(res.headers.get("cache-control")).toBe("no-store");
     const body = (await res.json()) as { code?: string };
     expect(body.code).toBe("POSTER_RENDER_FAILED");
+  });
+
+  it("returns 404 + no-store when scan id does not exist", async () => {
+    const storeModule = await import("@/lib/store");
+    const { GET } = await import("@/app/api/scan/[id]/poster/image/route");
+    const mockGetStoredReport = vi.mocked(storeModule.getStoredReport);
+    mockGetStoredReport.mockResolvedValue(null);
+
+    const req = makeNextRequest(
+      "http://localhost/api/scan/scan_missing/poster/image"
+    );
+
+    const res = await GET(req as never, {
+      params: Promise.resolve({ id: "scan_missing" }),
+    });
+
+    expect(res.status).toBe(404);
+    expect(res.headers.get("cache-control")).toBe("no-store");
+    const body = (await res.json()) as { code?: string; message?: string };
+    expect(body.code).toBe("SCAN_NOT_FOUND");
+    expect(body.message).toContain("scan_missing");
   });
 });
