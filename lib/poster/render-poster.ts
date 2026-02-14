@@ -623,22 +623,31 @@ async function findLocalChromeExecutable(): Promise<string | undefined> {
   return undefined;
 }
 
-/**
- * Get Chromium executable for Vercel serverless environment
- * Uses @sparticuz/chromium package
- */
-async function getVercelChromiumExecutable(): Promise<string | undefined> {
+interface VercelChromiumRuntimeConfig {
+  executablePath?: string;
+  args?: string[];
+}
+
+async function getVercelChromiumRuntimeConfig(): Promise<VercelChromiumRuntimeConfig> {
   try {
-    // Dynamic import for @sparticuz/chromium (optional dependency)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const sparticuzChromium = await import("@sparticuz/chromium");
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    const executablePath = sparticuzChromium.default?.executablePath
-      ? sparticuzChromium.default.executablePath()
+    const chromiumDefault = sparticuzChromium.default as
+      | {
+          executablePath?: () => Promise<string>;
+          args?: string[];
+        }
+      | undefined;
+
+    const executablePath = chromiumDefault?.executablePath
+      ? await chromiumDefault.executablePath()
       : undefined;
-    return executablePath;
+
+    return {
+      executablePath,
+      args: chromiumDefault?.args,
+    };
   } catch {
-    return undefined;
+    return {};
   }
 }
 
@@ -715,19 +724,24 @@ async function createBrowser(
 
   // Environment-based selection
   if (environment === "vercel") {
-    const vercelExecutable = await getVercelChromiumExecutable();
-    if (vercelExecutable) {
+    const vercelConfig = await getVercelChromiumRuntimeConfig();
+    if (vercelConfig.executablePath) {
       try {
         return await chromium.launch({
           headless: true,
-          executablePath: vercelExecutable,
+          executablePath: vercelConfig.executablePath,
+          args: vercelConfig.args,
+          chromiumSandbox: false,
         });
       } catch (error) {
-        logBrowserLaunchFailure("vercel", vercelExecutable, error);
+        logBrowserLaunchFailure("vercel", vercelConfig.executablePath, error);
         throw error;
       }
     }
-    // Fall through to local Chrome if @sparticuz/chromium not available
+    // Keep diagnostics explicit before fallback attempt
+    console.error(
+      "[poster] @sparticuz/chromium runtime config unavailable, trying local Chrome fallback"
+    );
   }
 
   // Local development: find local Chrome
