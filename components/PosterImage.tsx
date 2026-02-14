@@ -57,7 +57,7 @@ export interface PerformanceMetrics {
  * @param scanId - The scan ID used to fetch the poster image
  * @param src - Optional custom image source. Defaults to `/api/scan/:scanId/poster/image`
  * @param placeholderSrc - Optional custom placeholder source (base64 or URL). Defaults to SVG placeholder
- * @param timeoutMs - Timeout duration in milliseconds. Defaults to 8000ms
+ * @param timeoutMs - Timeout duration in milliseconds. Defaults to 20000ms
  * @param onLoad - Callback invoked when the image loads successfully
  * @param onError - Callback invoked when the image fails to load, receives error type
  * @param onTimeout - Callback invoked when image loading times out
@@ -81,7 +81,7 @@ export interface PosterImageProps {
 /**
  * Default configuration values
  */
-const DEFAULT_TIMEOUT_MS = 8000;
+const DEFAULT_TIMEOUT_MS = 20000;
 const ASPECT_RATIO = '687 / 1024';
 
 /**
@@ -373,12 +373,8 @@ export function PosterImage({
    * Handle timeout during image load
    */
   const handleTimeout = useCallback(() => {
-    // Abort the fetch request
-    if (controllerRef.current) {
-      controllerRef.current.abort();
-    }
-
-    // Clear progress
+    // Stop progress animation but keep request in-flight.
+    // Cold starts or cross-region requests can exceed timeout and still succeed.
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
     }
