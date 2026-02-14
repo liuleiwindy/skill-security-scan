@@ -231,3 +231,14 @@ export function isAndroidChrome(): boolean {
   const ua = navigator.userAgent;
   return /Android/.test(ua) && /Chrome/i.test(ua);
 }
+
+/**
+ * Detects if current browser is WeChat embedded webview
+ */
+export function isWeChatWebView(): boolean {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+
+  return /MicroMessenger/i.test(navigator.userAgent);
+}

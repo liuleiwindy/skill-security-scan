@@ -8,6 +8,7 @@ import {
   getErrorType,
   isMobileDevice,
   isIOSSafari,
+  isWeChatWebView,
 } from "@/lib/mobile-share";
 import {
   fetchImageAsFile,
@@ -166,6 +167,13 @@ export function SaveButton({
         });
         console.log('Share successful');
       } 
+      // Mobile without Web Share file support (e.g. WeChat webview)
+      else if (isMobile && !supportsShare) {
+        console.log('Mobile without Web Share file support, showing fallback');
+        setState('idle');
+        showFallback();
+        return;
+      }
       // Desktop with browser support
       else if (isDesktopEnvironment() && browserInfo.isSupported) {
         console.log('Desktop environment, triggering blob download');
@@ -241,7 +249,6 @@ export function SaveButton({
         console.log('Save not allowed, showing fallback');
         setState('idle');
         showFallback();
-        onSaveFailure?.();
         break;
 
       case 'network':
@@ -249,15 +256,20 @@ export function SaveButton({
         console.log('Network error during save, showing fallback');
         setState('idle');
         showFallback();
-        onSaveFailure?.();
         break;
 
       case 'unknown':
-        // Unknown error, show failed state
-        console.log('Unknown error during save, showing failed state');
-        setState('failed');
-        setShowBottomSheet(false);
-        onSaveFailure?.();
+        // Unknown error: fallback on mobile, failed state on desktop
+        if (isMobileDevice()) {
+          console.log('Unknown mobile save error, showing fallback');
+          setState('idle');
+          showFallback();
+        } else {
+          console.log('Unknown desktop save error, showing failed state');
+          setState('failed');
+          setShowBottomSheet(false);
+          onSaveFailure?.();
+        }
         break;
     }
   };
@@ -424,7 +436,11 @@ export function SaveButton({
         open={showBottomSheet}
         onClose={hideFallback}
         title="Save Poster"
-        description='Long press the poster image, then choose "Save Image".'
+        description={
+          isWeChatWebView()
+            ? 'In WeChat, tap "..." in the top-right, choose "Open in Browser", then long press the poster and choose "Save Image".'
+            : 'Long press the poster image, then choose "Save Image".'
+        }
         confirmText="I got it"
         triggerRef={buttonRef}
       />
