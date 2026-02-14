@@ -1,0 +1,138 @@
+[
+  {
+    "name": "b69_default_theme",
+    "baseline": "tests/fixtures/poster/baselines/poster-b69-reference.png",
+    "model": {
+      "id": "scan_fixture_v0240_b69",
+      "header": "AGENT SKILLS SECURITY CHECK//REPORT",
+      "proof": "PROOF ID: X9K2 · 2026-02-14 14:32 UTC",
+      "repoLabel": "REPO:",
+      "repoValue": "facebook/react/security-scan-fixture-mini",
+      "grade": "B",
+      "scoreText": "SCORE\\n69/100",
+      "beatsText": "BEATS 78%\\nOF REPOS",
+      "beatsRatio": "",
+      "criticalLabel": "CRITICAL",
+      "criticalNumber": "[ 1 ]",
+      "highLabel": "HIGH",
+      "highNumber": "[ 2 ]",
+      "mediumLabel": "MEDIUM",
+      "mediumNumber": "[ 0 ]",
+      "lowLabel": "LOW",
+      "lowNumber": "[ 0 ]",
+      "cta": "> SCAN TO VERIFY REPORT DETAILS <",
+      "short": "POWERD BY MYSKILLS.COM",
+      "qrUrl": "https://secscan.dev/r/X9K2"
+    },
+    "options": {
+      "ringPercent": 69,
+      "progressTrackColor": "#703e0d80",
+      "progressBackgroundColor": "#f6e57fff",
+      "progressBarColor": "#f6e57fff",
+      "scoreThemeColor": "#fce57b"
+    },
+    "maxDiffRatio": 0.01
+  },
+  {
+    "name": "a90_green_theme",
+    "baseline": "tests/fixtures/poster/baselines/poster-a90-reference.png",
+    "model": {
+      "id": "scan_fixture_v0240_a90",
+      "header": "AGENT SKILLS SECURITY CHECK//REPORT",
+      "proof": "PROOF ID: X9K2 · 2026-02-14 14:32 UTC",
+      "repoLabel": "REPO:",
+      "repoValue": "facebook/react/security-scan-fixture-mini",
+      "grade": "A",
+      "scoreText": "SCORE\\n90/100",
+      "beatsText": "BEATS 78%\\nOF REPOS",
+      "beatsRatio": "",
+      "criticalLabel": "CRITICAL",
+      "criticalNumber": "[ 1 ]",
+      "highLabel": "HIGH",
+      "highNumber": "[ 2 ]",
+      "mediumLabel": "MEDIUM",
+      "mediumNumber": "[ 0 ]",
+      "lowLabel": "LOW",
+      "lowNumber": "[ 0 ]",
+      "cta": "> SCAN TO VERIFY REPORT DETAILS <",
+      "short": "POWERED BY MYSKILL.AI",
+      "qrUrl": "https://secscan.dev/r/X9K2"
+    },
+    "options": {
+      "ringPercent": 90,
+      "progressTrackColor": "#1f7a44",
+      "progressBackgroundColor": "#7dffb1",
+      "progressBarColor": "#7dffb1",
+      "scoreThemeColor": "#7dffb1"
+    },
+    "maxDiffRatio": 0.01
+  },
+  {
+    "name": "a100_green_edge",
+    "baseline": "tests/fixtures/poster/baselines/poster-a100-reference.png",
+    "model": {
+      "id": "scan_edge_a100",
+      "header": "AGENT SKILLS SECURITY CHECK//REPORT",
+      "proof": "PROOF ID: A100 · 2026-02-20 08:00 UTC",
+      "repoLabel": "REPO:",
+      "repoValue": "anthropics/claude-code",
+      "grade": "A",
+      "scoreText": "SCORE\\n100/100",
+      "beatsText": "BEATS 99%\\nOF REPOS",
+      "beatsRatio": "",
+      "criticalLabel": "CRITICAL",
+      "criticalNumber": "[ 0 ]",
+      "highLabel": "HIGH",
+      "highNumber": "[ 0 ]",
+      "mediumLabel": "MEDIUM",
+      "mediumNumber": "[ 0 ]",
+      "lowLabel": "LOW",
+      "lowNumber": "[ 1 ]",
+      "cta": "> SCAN TO VERIFY REPORT DETAILS <",
+      "short": "POWERED BY MYSKILL.AI",
+      "qrUrl": "https://secscan.dev/r/A100"
+    },
+    "options": {
+      "ringPercent": 100,
+      "progressTrackColor": "#1f7a44",
+      "progressBackgroundColor": "#7dffb1",
+      "progressBarColor": "#7dffb1",
+      "scoreThemeColor": "#7dffb1"
+    },
+    "maxDiffRatio": 0.01
+  },
+  {
+    "name": "d0_red_edge",
+    "baseline": "tests/fixtures/poster/baselines/poster-d0-reference.png",
+    "model": {
+      "id": "scan_edge_d0",
+      "header": "AGENT SKILLS SECURITY CHECK//REPORT",
+      "proof": "PROOF ID: D000 · 2026-02-20 08:05 UTC",
+      "repoLabel": "REPO:",
+      "repoValue": "legacy/unverified-package",
+      "grade": "D",
+      "scoreText": "SCORE\\n0/100",
+      "beatsText": "BEATS 01%\\nOF REPOS",
+      "beatsRatio": "",
+      "criticalLabel": "CRITICAL",
+      "criticalNumber": "[ 5 ]",
+      "highLabel": "HIGH",
+      "highNumber": "[ 7 ]",
+      "mediumLabel": "MEDIUM",
+      "mediumNumber": "[ 3 ]",
+      "lowLabel": "LOW",
+      "lowNumber": "[ 1 ]",
+      "cta": "> SCAN TO VERIFY REPORT DETAILS <",
+      "short": "POWERED BY MYSKILL.AI",
+      "qrUrl": "https://secscan.dev/r/D000"
+    },
+    "options": {
+      "ringPercent": 0,
+      "progressTrackColor": "#7a2e2e",
+      "progressBackgroundColor": "#ff7d7d",
+      "progressBarColor": "#ff7d7d",
+      "scoreThemeColor": "#ff7d7d"
+    },
+    "maxDiffRatio": 0.01
+  }
+]

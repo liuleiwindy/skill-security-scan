@@ -1,0 +1,9 @@
+{
+  "version": "1.0",
+  "grades": [
+    { "grade": "A", "min": 80, "max": 100, "color": "#7dffb1" },
+    { "grade": "B", "min": 60, "max": 79, "color": "#b8ff7d" },
+    { "grade": "C", "min": 40, "max": 59, "color": "#ffdd7d" },
+    { "grade": "D", "min": 0, "max": 39, "color": "#ff7d7d" }
+  ]
+}

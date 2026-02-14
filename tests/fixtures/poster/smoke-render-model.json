@@ -1,0 +1,22 @@
+{
+  "id": "scan_fixture_v0240",
+  "header": "SYSTEM INTEGRITY CHECK // REPORT",
+  "proof": "PROOF ID: X9K2 · 2026-02-14 14:32 UTC",
+  "repoLabel": "REPO:",
+  "repoValue": "facebook/react/security-scan-fixture-mini",
+  "grade": "B",
+  "scoreText": "SCORE\\n69/100",
+  "beatsText": "BEATS\\nOF REPOS",
+  "beatsRatio": "78%",
+  "criticalLabel": "CRITICAL",
+  "criticalNumber": "[ 1 ]",
+  "highLabel": "HIGH",
+  "highNumber": "[ 2 ]",
+  "mediumLabel": "MEDIUM",
+  "mediumNumber": "[ 0 ]",
+  "lowLabel": "LOW",
+  "lowNumber": "[ 0 ]",
+  "cta": "> SCAN TO VERIFY REPORT DETAILS <",
+  "short": "POWERED BY MYSKILL.AI",
+  "qrUrl": "https://secscan.dev/r/X9K2"
+}
