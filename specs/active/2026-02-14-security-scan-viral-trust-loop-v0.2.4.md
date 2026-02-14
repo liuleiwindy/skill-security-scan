@@ -74,6 +74,10 @@ Detailed technical design is maintained in slice specs, starting with:
 - harden validation and error behavior
 - visual regression sample matrix
 - release gate checks (`test/build/perf`)
+- deployment stability gates (memory, launch reliability, error-rate thresholds, rollback trigger)
+- cross-environment render consistency policy:
+  - same-runner determinism uses strict hash equality
+  - cross-environment determinism (local vs Vercel / Chromium version drift) uses pixel-diff thresholds instead of hash equality
 
 ## 6. Master Acceptance Criteria
 

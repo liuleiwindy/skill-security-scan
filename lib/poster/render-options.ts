@@ -19,8 +19,8 @@ export interface ScanReport {
   id: string;
   repoUrl: string;
   score: number;
-  grade: Grade;
-  status: ScanStatus;
+  grade?: Grade;
+  status?: ScanStatus;
   summary: { critical: number; high: number; medium: number; low: number };
   engineVersion: string;
   scannedAt: string;
@@ -441,7 +441,7 @@ export const DEFAULT_POSTER_MODEL: PosterRenderModel = {
  */
 export function createPosterModelFromScanReport(report: ScanReport): PosterRenderModel {
   const gradeConfig = loadGradeConfig();
-  const grade = report.grade ?? getGradeForScore(report.score, gradeConfig);
+  const grade = getGradeForScore(report.score, gradeConfig);
 
   return {
     id: report.id,

@@ -31,7 +31,7 @@ import {
   getAlignX,
   getAlignY,
   clamp,
-} from "./render-options.js";
+} from "./render-options";
 
 // ============================================================================
 // Constants
@@ -616,6 +616,42 @@ function detectEnvironment(): "local" | "vercel" {
 }
 
 /**
+ * Get sanitized environment flags for diagnostic logging
+ * Does not expose sensitive environment variable values
+ */
+function getEnvironmentFlags(): {
+  VERCEL: boolean;
+  VERCEL_ENV: string | undefined;
+  AWS_LAMBDA: boolean;
+} {
+  return {
+    VERCEL: process.env.VERCEL !== undefined,
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    AWS_LAMBDA: process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined,
+  };
+}
+
+/**
+ * Log browser launch failure with diagnostic information
+ */
+function logBrowserLaunchFailure(
+  launchMode: "local" | "vercel",
+  executablePath: string | undefined,
+  error: unknown
+): void {
+  const envFlags = getEnvironmentFlags();
+  const errorMessage = error instanceof Error ? error : String(error);
+
+  console.error("[poster] Browser launch failed:");
+  console.error(`  mode: ${launchMode}`);
+  console.error(`  executablePath: ${executablePath ?? "undefined"}`);
+  console.error(
+    `  env: { VERCEL: ${envFlags.VERCEL}, VERCEL_ENV: ${envFlags.VERCEL_ENV ?? "undefined"}, AWS_LAMBDA: ${envFlags.AWS_LAMBDA} }`
+  );
+  console.error(`  error: ${errorMessage}`);
+}
+
+/**
  * Create browser instance with appropriate executable based on environment
  *
  * Strategy:
@@ -632,20 +668,30 @@ async function createBrowser(
 
   // If custom path provided, use it directly
   if (customExecutablePath) {
-    return chromium.launch({
-      headless: true,
-      executablePath: customExecutablePath,
-    });
+    try {
+      return await chromium.launch({
+        headless: true,
+        executablePath: customExecutablePath,
+      });
+    } catch (error) {
+      logBrowserLaunchFailure(environment, customExecutablePath, error);
+      throw error;
+    }
   }
 
   // Environment-based selection
   if (environment === "vercel") {
     const vercelExecutable = await getVercelChromiumExecutable();
     if (vercelExecutable) {
-      return chromium.launch({
-        headless: true,
-        executablePath: vercelExecutable,
-      });
+      try {
+        return await chromium.launch({
+          headless: true,
+          executablePath: vercelExecutable,
+        });
+      } catch (error) {
+        logBrowserLaunchFailure("vercel", vercelExecutable, error);
+        throw error;
+      }
     }
     // Fall through to local Chrome if @sparticuz/chromium not available
   }
@@ -653,10 +699,15 @@ async function createBrowser(
   // Local development: find local Chrome
   const localExecutable = await findLocalChromeExecutable();
   if (localExecutable) {
-    return chromium.launch({
-      headless: true,
-      executablePath: localExecutable,
-    });
+    try {
+      return await chromium.launch({
+        headless: true,
+        executablePath: localExecutable,
+      });
+    } catch (error) {
+      logBrowserLaunchFailure("local", localExecutable, error);
+      throw error;
+    }
   }
 
   // No executable found - provide helpful error message

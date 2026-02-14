@@ -2,6 +2,7 @@
  * Poster Render Module
  *
  * V0.2.4.0 Core Render Engine
+ * V0.2.4.1 Data and API Integration
  */
 
 // Types
@@ -48,3 +49,13 @@ export {
   type RenderResult,
   type RendererConfig,
 } from "./render-poster.js";
+
+// Query parser (V0.2.4.1)
+export {
+  parsePosterQueryOverrides,
+  generateRequestId,
+  createPosterApiError,
+  type ImageQueryOverrides,
+  type PosterApiError,
+  type ParseResult,
+} from "./query-parser.js";

@@ -11,13 +11,13 @@
 
 - Phase: Active
 - Version line: `v0.2.4` (master)
-- Current slice: `v0.2.4.0`
-- Implementation approval: In progress
+- Current slice: `v0.2.4.2`
+- Implementation approval: `v0.2.4.1` ready_for_submit
 
 ## 2. Milestones by Slice
 
 1. `M1 / v0.2.4.0` - Core render engine
-   - Status: in_progress
+   - Status: completed
    - Deliverables:
      - reusable renderer modules in `lib/poster/`
      - template semantic alignment (`progress-*`)
@@ -25,7 +25,7 @@
      - file-driven risk-grade config (`config/risk-grade.config.json`)
 
 2. `M2 / v0.2.4.1` - Data and API integration
-   - Status: pending
+   - Status: completed (ready_for_submit)
    - Deliverables:
      - report -> poster domain mapping
      - `GET /api/scan/:id/poster/image`
@@ -44,6 +44,8 @@
      - strict parameter validation and error mapping
      - visual regression sample matrix
      - build/test/perf release checks
+     - production stability gate (memory/error-rate/rollback criteria)
+     - cross-environment visual consistency gate (same-runner hash equality + cross-runner pixel diff threshold)
 
 ## 3. Execution Tasks
 
@@ -52,7 +54,7 @@
    - Output: `lib/poster/render-options.ts`
 
 2. Move script POC into render core module
-   - Status: in_progress
+   - Status: completed
    - Output: `lib/poster/render-poster.ts`
    - POC source: `scripts/render-pen-poster-poc.ts`
 
@@ -61,7 +63,7 @@
    - Output: `lib/poster/poster-domain.ts`
 
 4. Add poster image API route
-   - Status: pending
+   - Status: completed
    - Output: `app/api/scan/[id]/poster/image/route.ts`
 
 5. Integrate poster page image + save CTA
@@ -69,7 +71,7 @@
    - Output: updates under `app/scan/poster/[id]/`
 
 6. Add tests and regression assets
-   - Status: pending
+   - Status: completed (`v0.2.4.1` scope)
    - Output:
      - parser tests
      - risk-grade config validation tests
@@ -92,6 +94,18 @@
      - add/verify `playwright` runtime dependency
      - verify `qrcode` and font packages available in production build
      - document Chromium runtime requirement for deployment environment
+
+9. Preview smoke validation (minimum deployment check for `v0.2.4.1`)
+   - Status: pending
+   - Output:
+     - preview environment smoke script for poster image endpoint
+     - response/content-type/dimension/QR decode assertions
+
+10. Cross-environment regression gate design (`v0.2.4.3`)
+   - Status: pending
+   - Output:
+     - define same-runner strict hash check and cross-environment pixel-diff threshold policy
+     - baseline split by runtime target (local, vercel-preview) if needed
 
 ## 4. Acceptance Gate Before Done
 
