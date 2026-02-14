@@ -463,25 +463,57 @@ async function loadFonts(): Promise<{
 }> {
   const root = process.cwd();
 
-  const [pressStart, vt323, ibmCondensed] = await Promise.all([
-    fs.readFile(
+  const candidates = {
+    pressStart: [
+      path.join(
+        root,
+        "assets/poster/fonts/press-start-2p-latin-400-normal.woff"
+      ),
       path.join(
         root,
         "node_modules/@fontsource/press-start-2p/files/press-start-2p-latin-400-normal.woff"
-      )
-    ),
-    fs.readFile(
+      ),
+    ],
+    vt323: [
+      path.join(root, "assets/poster/fonts/vt323-latin-400-normal.woff"),
       path.join(
         root,
         "node_modules/@fontsource/vt323/files/vt323-latin-400-normal.woff"
-      )
-    ),
-    fs.readFile(
+      ),
+    ],
+    ibmCondensed: [
+      path.join(
+        root,
+        "assets/poster/fonts/ibm-plex-sans-condensed-latin-600-normal.woff"
+      ),
       path.join(
         root,
         "node_modules/@fontsource/ibm-plex-sans-condensed/files/ibm-plex-sans-condensed-latin-600-normal.woff"
-      )
-    ),
+      ),
+    ],
+  } as const;
+
+  const readFirstAvailable = async (
+    paths: readonly string[],
+    label: string
+  ): Promise<Buffer> => {
+    for (const candidatePath of paths) {
+      try {
+        return await fs.readFile(candidatePath);
+      } catch {
+        // Try next candidate
+      }
+    }
+
+    throw new Error(
+      `Poster font missing: ${label}. Tried: ${paths.join(", ")}`
+    );
+  };
+
+  const [pressStart, vt323, ibmCondensed] = await Promise.all([
+    readFirstAvailable(candidates.pressStart, "Press Start 2P"),
+    readFirstAvailable(candidates.vt323, "VT323"),
+    readFirstAvailable(candidates.ibmCondensed, "IBM Plex Sans Condensed"),
   ]);
 
   return { pressStart, vt323, ibmCondensed };
