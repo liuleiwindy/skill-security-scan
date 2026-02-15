@@ -1,0 +1,71 @@
+module:
+  name: report-page-instrumentation
+  path: app/scan/report/[id]/page.tsx (modified)
+  status: pending
+  version: 1.0.0
+
+exports:
+  - name: reportPageViewEvent
+    signature: (scan_id: string) => void
+    description: Trigger report_page_view event on page first render
+
+dependencies:
+  - module: lib/analytics/track.ts
+    imports: [track]
+    required: true
+
+constraints:
+  allow_duplicate_impl: false
+  forbid_impl:
+  - Direct gtag() calls in report page
+  - Direct fetch() calls to /api/analytics in report page
+  - Alternative event triggering mechanisms
+
+event_triggers:
+  report_page_view:
+    trigger: Page first render (useEffect with empty deps)
+    required_props: [scan_id, ts]
+    implementation: track('report_page_view', { scan_id })
+
+qr_attribution:
+  - Track when src=poster_qr parameter is present
+  - Only fire poster_qr_visit on first page load with src=poster_qr
+  - Use sessionStorage to guard against duplicate fires
+  - Required for QR-attributed UV/PV calculation
+
+implementation_notes: |
+  - This is a server component (no useEffect needed)
+  - report_page_view event should be triggered in client-side component
+  - Consider adding a client-side wrapper component for analytics
+  - Or convert to client component for analytics
+  - ReportShareActions component may need similar instrumentation
+  - Poster page link in header already exists
+
+qr_implementation_notes: |
+  - Check URLSearchParams for src=poster_qr
+  - Use sessionStorage key: 'qr_visit_{scan_id}' to track first visit
+  - Only fire poster_qr_visit if not already fired for this scan_id
+  - Required props: scan_id, src, ua_basic, ts
+  - ua_basic: navigator.userAgent (truncated if needed)
+
+poster_link_tracking:
+  - Existing link: /scan/poster/{id} in header
+  - This will lead to poster_page_view event (tracked in poster page)
+  - No explicit tracking needed here
+
+performance_considerations:
+  - Don't block report page rendering with analytics
+  - Minimal overhead from track() calls
+  - Consider deferred tracking for non-critical events
+
+testing:
+  - Test report_page_view fires on page load
+  - Test QR attribution with src=poster_qr parameter
+  - Test first-load guard prevents duplicate poster_qr_visit
+  - Test that analytics don't block report rendering
+  - Mock track() in component tests
+
+optional_events:
+  - Consider tracking report_share_actions (share button clicks)
+  - Consider tracking finding interactions (expand/collapse)
+  - These are out of scope for V0.2.4.3 but could be added later

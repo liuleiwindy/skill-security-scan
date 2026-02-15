@@ -1,0 +1,95 @@
+module:
+  name: scan-page-instrumentation
+  path: app/scan/page.tsx (modified)
+  status: pending
+  version: 1.0.0
+
+exports:
+  - name: scanPageViewEvent
+    signature: void
+    description: Trigger scan_page_view event on page first render
+
+  - name: scanSubmitClickedEvent
+    signature: (input_type: 'github_url' | 'npm_command' | 'unknown') => void
+    description: Trigger scan_submit_clicked event when user submits scan
+
+  - name: scanResultEvent
+    signature: (status: 'success' | 'error', duration_ms: number, scan_id?: string, error_code?: string) => void
+    description: Trigger scan_result event when scan API returns
+
+dependencies:
+  - module: lib/analytics/track.ts
+    imports: [track]
+    required: true
+
+constraints:
+  allow_duplicate_impl: false
+  forbid_impl:
+  - Direct gtag() calls in scan page
+  - Direct fetch() calls to /api/analytics in scan page
+  - Alternative event triggering mechanisms
+
+event_triggers:
+  scan_page_view:
+    trigger: Page first render (useEffect with empty deps)
+    required_props: [ts]
+    implementation: track('scan_page_view')
+
+  scan_submit_clicked:
+    trigger: User clicks submit/start scan button (onSubmit handler)
+    required_props: [input_type, ts]
+    input_type_detection:
+      github_url: Input looks like GitHub URL
+      npm_command: Input matches npm command pattern
+      unknown: Other cases
+    implementation: track('scan_submit_clicked', { input_type })
+
+  scan_result:
+    trigger: Scan API call completes (success or error)
+    required_props: [status, duration_ms, ts]
+    optional_props: [scan_id, error_code]
+    implementation: track('scan_result', { status, duration_ms, scan_id, error_code })
+
+implementation_notes: |
+  - Use useEffect for scan_page_view (empty dependency array)
+  - Call track('scan_page_view') on component mount
+  - Detect input_type for scan_submit_clicked (github_url vs npm_command vs unknown)
+  - Measure duration for scan_result (from submit to API response)
+  - Extract scan_id from success response
+  - Map error types to error_code format {domain}_{type} for failures
+  - All track() calls are fire-and-forget (no await)
+  - Don't block UI with analytics calls
+
+input_type_detection_logic:
+  github_url:
+    - Starts with 'https://github.com/' or 'github.com/'
+    - Or matches git@github.com: pattern
+
+  npm_command:
+    - Matches npm install <package> pattern
+    - Or npm i <package> pattern
+    - Or yarn/pnpm/bun install patterns
+
+  unknown:
+    - Fallback for unrecognizable inputs
+
+error_code_mapping:
+  timeout: scan_timeout
+  network_error: scan_network
+  http_4xx: scan_http_4xx
+  http_5xx: scan_http_5xx
+  validation_error: scan_validation
+  unknown_error: scan_unknown
+
+performance_considerations:
+  - Duration measurement should be accurate (use Date.now())
+  - Don't add overhead to scan submission
+  - Use requestIdleCallback for non-critical events if needed
+
+testing:
+  - Test scan_page_view fires on page load
+  - Test input_type detection for various inputs
+  - Test duration measurement accuracy
+  - Test error_code mapping
+  - Test that analytics don't block scan submission
+  - Mock track() in component tests

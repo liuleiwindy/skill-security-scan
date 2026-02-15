@@ -31,12 +31,14 @@ export type ButtonState = 'idle' | 'saving' | 'saved' | 'failed';
 
 /**
  * Props interface for SaveButton component
- * 
+ *
  * @param scanId - The scan ID associated with poster being saved
  * @param imageUrl - Optional direct URL to poster image
  * @param onSaveSuccess - Optional callback invoked when save operation succeeds
  * @param onSaveFailure - Optional callback invoked when save operation fails
  * @param onFallbackShow - Optional callback invoked when fallback UI should be shown (for backward compatibility)
+ * @param onSaveStart - Optional callback invoked when save operation starts, receives the method used ('download' | 'share')
+ * @param onSaveComplete - Optional callback invoked when save operation completes (success or error), receives method, status, duration, and optional error type
  */
 export interface SaveButtonProps {
   scanId: string;
@@ -44,6 +46,8 @@ export interface SaveButtonProps {
   onSaveSuccess?: () => void;
   onSaveFailure?: () => void;
   onFallbackShow?: () => void;
+  onSaveStart?: (method: 'download' | 'share') => void;
+  onSaveComplete?: (method: 'download' | 'share', status: 'success' | 'error', durationMs: number, errorType?: string) => void;
 }
 
 /**
@@ -104,12 +108,14 @@ const getButtonText = (state: ButtonState): string => {
  * />
  * ```
  */
-export function SaveButton({ 
+export function SaveButton({
   scanId,
   imageUrl,
-  onSaveSuccess, 
+  onSaveSuccess,
   onSaveFailure,
   onFallbackShow,
+  onSaveStart,
+  onSaveComplete,
 }: SaveButtonProps) {
   const [state, setState] = useState<ButtonState>('idle');
   const [showBottomSheet, setShowBottomSheet] = useState(false);
@@ -118,13 +124,14 @@ export function SaveButton({
 
   /**
    * Handle button click
-   * 
+   *
    * Initiates save operation with platform-specific behavior:
    * - Detects mobile/desktop environment
    * - Attempts Web Share API on supported devices
    * - Handles errors appropriately (silent on cancel, fallback on failure)
    * - Triggers success/failure callbacks
    * - Manages state transitions
+   * - Tracks save operations for analytics
    */
   const handleClick = async () => {
     // Prevent clicks during saving or saved state
@@ -148,6 +155,23 @@ export function SaveButton({
     const isIOS = isIOSSafari();
     const supportsShare = canShareFiles();
 
+    // Determine the method being used for analytics
+    const getMethod = (): 'download' | 'share' => {
+      if (isWeChatWebView()) return 'download';
+      if (isIOS && !supportsShare) return 'download';
+      if (isMobile && supportsShare) return 'share';
+      if (isMobile && !supportsShare) return 'download';
+      if (isDesktopEnvironment() && browserInfo.isSupported) return 'download';
+      return 'download'; // fallback
+    };
+
+    const method = getMethod();
+
+    // Track save start (before operation begins)
+    onSaveStart?.(method);
+
+    const startTime = Date.now();
+
     try {
       // WeChat webview: open native image preview directly (best available save UX)
       if (isWeChatWebView()) {
@@ -155,6 +179,11 @@ export function SaveButton({
         await openWeChatImagePreview(posterUrl);
         setState('saved');
         onSaveSuccess?.();
+
+        // Track completion
+        const duration = Date.now() - startTime;
+        onSaveComplete?.(method, 'success', duration);
+
         setTimeout(() => {
           setState('idle');
         }, 1200);
@@ -166,6 +195,11 @@ export function SaveButton({
         console.log('iOS Safari without Web Share file support, showing fallback');
         setState('idle');
         showFallback();
+
+        // Track completion as error (not supported)
+        const duration = Date.now() - startTime;
+        onSaveComplete?.('download', 'error', duration, 'download_not_supported');
+
         return;
       }
 
@@ -179,12 +213,17 @@ export function SaveButton({
           text: 'Check out my security scan poster!',
         });
         console.log('Share successful');
-      } 
+      }
       // Mobile without Web Share file support (e.g. WeChat webview)
       else if (isMobile && !supportsShare) {
         console.log('Mobile without Web Share file support, showing fallback');
         setState('idle');
         showFallback();
+
+        // Track completion as error (not supported)
+        const duration = Date.now() - startTime;
+        onSaveComplete?.('download', 'error', duration, 'download_not_supported');
+
         return;
       }
       // Desktop with browser support
@@ -203,14 +242,78 @@ export function SaveButton({
       setState('saved');
       onSaveSuccess?.();
 
+      // Track completion
+      const duration = Date.now() - startTime;
+      onSaveComplete?.(method, 'success', duration);
+
       // Revert to idle after 1.2s
       setTimeout(() => {
         setState('idle');
       }, 1200);
 
     } catch (error) {
+      // Track completion with error
+      const duration = Date.now() - startTime;
+      const errorType = mapErrorType(error, method);
+      onSaveComplete?.(method, 'error', duration, errorType);
+
       // Handle save errors
       handleSaveError(error);
+    }
+  };
+
+  /**
+   * Map error to analytics error type
+   *
+   * @param error - The error object
+   * @param method - The method being used ('download' | 'share')
+   * @returns The error type for analytics
+   */
+  const mapErrorType = (error: unknown, method: 'download' | 'share'): string => {
+    const errorType = getErrorType(error);
+
+    // Map share errors
+    if (method === 'share') {
+      switch (errorType) {
+        case 'abort':
+          return 'share_aborted';
+        case 'not-allowed':
+          return 'share_not_supported'; // Not allowed means share not supported
+        case 'network':
+          return 'share_network';
+        default:
+          // Check for specific error messages
+          if (error instanceof Error) {
+            if (error.message.includes('timed out')) {
+              return 'share_timeout';
+            }
+            if (error.message.includes('not available')) {
+              return 'share_not_supported';
+            }
+          }
+          return 'share_unknown';
+      }
+    }
+
+    // Map download errors
+    switch (errorType) {
+      case 'abort':
+        return 'download_aborted';
+      case 'not-allowed':
+        return 'download_not_allowed';
+      case 'network':
+        return 'download_network';
+      default:
+        // Check for specific error messages
+        if (error instanceof Error) {
+          if (error.message.includes('timed out')) {
+            return 'download_timeout';
+          }
+          if (error.message.includes('not supported')) {
+            return 'download_not_supported';
+          }
+        }
+        return 'download_unknown';
     }
   };
 
@@ -277,6 +380,7 @@ export function SaveButton({
           console.log('Unknown mobile save error, showing fallback');
           setState('idle');
           showFallback();
+          onSaveFailure?.();
         } else {
           console.log('Unknown desktop save error, showing failed state');
           setState('failed');

@@ -1,0 +1,63 @@
+module:
+  name: session-id
+  path: lib/analytics/session-id.ts
+  status: pending
+  version: 1.0.0
+
+exports:
+  - name: getSessionId
+    signature: () => string
+    description: Get or generate anonymous session ID for current tab/session
+
+  - name: generateSessionId
+    signature: () => string
+    description: Generate new UUID-based session ID
+
+dependencies: []
+
+constraints:
+  allow_duplicate_impl: false
+  forbid_impl:
+  - Using localStorage for session ID (wrong scope)
+  - Using cookies for session ID (wrong scope)
+  - Implementing session ID with longer persistence than session
+
+persistence_strategy:
+  storage: sessionStorage
+  key_name: security_scan_anon_session_id
+  scope: Tab/session-scoped (clears when tab closes)
+
+generation_rules:
+  method: crypto.randomUUID()
+  format: UUID v4
+  trigger: First event in current tab/session
+
+read_priority:
+  1: sessionStorage
+  2: generate new (if not exists)
+
+write_strategy:
+  - Write to sessionStorage only
+  - No cookie persistence (session-scoped by design)
+  - No localStorage (session-scoped by design)
+
+implementation_notes: |
+  - Use browser crypto.randomUUID() for secure UUID generation
+  - Session ID is scoped to current tab/sessionStorage
+  - Automatically cleared when tab is closed
+  - New session ID for each new tab/window
+  - Session ID is anonymous and cannot be linked to individuals
+  - Used for grouping events within a single session
+  - Nullable in backend event payload for backward compatibility
+
+privacy_considerations:
+  - Session ID is anonymous and short-lived
+  - Cleared automatically when user closes tab
+  - No cross-tab tracking
+  - No persistent storage (sessionStorage only)
+  - Cannot be used for long-term user tracking
+
+use_cases:
+  - Group events within a single browsing session
+  - Calculate session-level metrics (e.g., events per session)
+  - Distinguish between multiple concurrent sessions from same device

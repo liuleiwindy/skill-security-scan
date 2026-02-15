@@ -11,6 +11,8 @@
     "lint:fix": "next lint --fix",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
     "test:promptfoo": "HOME=/tmp npx --yes promptfoo eval -c tests/promptfoo/prompt-injection.local.yaml",
     "test:promptfoo:online:connect": "set -a; [ -f .env.local ] && . .env.local; set +a; OPENAI_API_KEY=\"$ZAI_API_KEY\" OPENAI_API_BASE_URL=\"$ZAI_API_BASE_URL\" HOME=/tmp REQUEST_TIMEOUT_MS=15000 npx --yes promptfoo eval -c tests/promptfoo/prompt-injection.connectivity.yaml --max-concurrency 1 --no-cache",
     "test:promptfoo:online": "set -a; [ -f .env.local ] && . .env.local; set +a; OPENAI_API_KEY=\"$ZAI_API_KEY\" OPENAI_API_BASE_URL=\"$ZAI_API_BASE_URL\" HOME=/tmp REQUEST_TIMEOUT_MS=45000 npx --yes promptfoo eval -c tests/promptfoo/prompt-injection.online.yaml",
@@ -31,9 +33,11 @@
     "qrcode": "^1.5.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "satori": "^0.19.2"
+    "satori": "^0.19.2",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
@@ -49,5 +53,6 @@
     "promptfoo": "^0.120.24",
     "typescript": "^5",
     "vitest": "^4.0.18"
-  }
+  },
+  "packageManager": "pnpm@10.29.3+sha512.498e1fb4cca5aa06c1dcf2611e6fafc50972ffe7189998c409e90de74566444298ffe43e6cd2acdc775ba1aa7cc5e092a8b7054c811ba8c5770f84693d33d2dc"
 }

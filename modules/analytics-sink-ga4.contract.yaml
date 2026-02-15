@@ -1,0 +1,69 @@
+module:
+  name: analytics-sink-ga4
+  path: lib/analytics/sinks/ga4.ts
+  status: pending
+  version: 1.0.0
+
+exports:
+  - name: sendToGA4
+    signature: (eventName: string, props: Record<string, unknown>) => Promise<void>
+    description: Send event to GA4 with no-op when not configured
+
+dependencies:
+  - module: process.env
+    imports: [NEXT_PUBLIC_GA4_MEASUREMENT_ID]
+    required: true
+
+constraints:
+  allow_duplicate_impl: false
+  forbid_impl:
+  - Direct gtag() calls in business code
+  - Alternative GA4 integration methods
+  - Sending events when GA4 is not configured
+
+feature_gate:
+  env_var: NEXT_PUBLIC_GA4_MEASUREMENT_ID
+  behavior: no-op when undefined or empty
+  reason: GA4 is optional, backend ingestion is mandatory
+
+ga4_contract:
+  event_format: gtag('event', eventName, props)
+  measurement_id: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID
+  initialization: script tag with gtag.js
+
+  event_mapping:
+    scan_page_view: page_view (or custom event)
+    scan_submit_clicked: custom event
+    scan_result: custom event
+    report_page_view: page_view (or custom event)
+    poster_page_view: page_view (or custom event)
+    poster_save_clicked: custom event
+    poster_download_result: custom event
+    poster_share_result: custom event
+    poster_qr_visit: custom event
+
+implementation_notes: |
+  - Feature-gated by NEXT_PUBLIC_GA4_MEASUREMENT_ID
+  - If env var not set, function is no-op (does nothing)
+  - Load gtag.js script dynamically only if configured
+  - Map internal event names to GA4 event names
+  - Send custom parameters alongside standard GA4 parameters
+  - Handle GA4 errors silently (don't break app)
+  - Use async/await for gtag calls
+  - Respect GA4 event limits (batching if needed)
+
+error_handling:
+  - GA4 errors should be logged but not thrown
+  - Never block app functionality due to GA4 failures
+  - Graceful degradation if gtag not loaded
+
+performance_considerations:
+  - Defer GA4 script loading (after page load)
+  - Batch events when possible
+  - Don't block main thread with GA4 calls
+
+testing:
+  - Test no-op behavior when NEXT_PUBLIC_GA4_MEASUREMENT_ID not set
+  - Test event sending when configured
+  - Test error handling when GA4 fails
+  - Mock gtag in tests

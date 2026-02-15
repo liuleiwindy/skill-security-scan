@@ -1,0 +1,97 @@
+module:
+  name: analytics-migration
+  path: migrations/analytics_events.sql
+  status: implemented
+  version: 1.0.0
+
+exports:
+  - name: analytics_events_table
+    signature: SQL TABLE
+    description: Core analytics events table for storing all tracking events
+
+  - name: analytics_events_indexes
+    signature: SQL INDEX[]
+    description: Indexes on (event_name, created_at), (scan_id, created_at), (device_id, created_at)
+
+dependencies: []
+
+constraints:
+  allow_duplicate_impl: false
+  forbid_impl:
+    - Alternative analytics storage schema
+    - No additional aggregation/materialized tables (out of scope for V0.2.4.3)
+
+schema_requirements:
+  - name: id
+    type: uuid
+    nullable: false
+    description: Unique event identifier
+
+  - name: event_name
+    type: text
+    nullable: false
+    description: Event name (e.g., scan_page_view, poster_save_clicked)
+
+  - name: scan_id
+    type: text
+    nullable: true
+    description: Associated scan request ID
+
+  - name: device_id
+    type: text
+    nullable: false
+    description: Anonymous device identifier
+
+  - name: session_id
+    type: text
+    nullable: true
+    description: Anonymous session identifier (tab-scoped)
+
+  - name: src
+    type: text
+    nullable: true
+    description: Traffic source attribution (e.g., poster_qr)
+
+  - name: status
+    type: text
+    nullable: true
+    description: Event status (e.g., success, error)
+
+  - name: error_code
+    type: text
+    nullable: true
+    description: Error code following {domain}_{type} format
+
+  - name: duration_ms
+    type: integer
+    nullable: true
+    description: Duration in milliseconds for performance tracking
+
+  - name: props
+    type: jsonb
+    nullable: true
+    description: Flexible JSON payload for additional event properties
+
+  - name: created_at
+    type: timestamptz
+    nullable: false
+    default: now()
+    description: Event timestamp with timezone
+
+index_requirements:
+  - name: idx_analytics_events_event_name_created
+    columns: [event_name, created_at]
+    purpose: Query funnel events by time range
+
+  - name: idx_analytics_events_scan_id_created
+    columns: [scan_id, created_at]
+    purpose: Query all events for a specific scan
+
+  - name: idx_analytics_events_device_id_created
+    columns: [device_id, created_at]
+    purpose: Query device-level analytics and UV/PV dedupe
+
+implementation_notes: |
+  - Use native SQL migration scripts (no Prisma/Drizzle)
+  - Align with existing @vercel/postgres + SQL repository pattern
+  - Follow PostgreSQL best practices for JSONB indexing

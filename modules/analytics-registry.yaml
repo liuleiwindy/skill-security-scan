@@ -1,0 +1,101 @@
+# Analytics Module Registry for V0.2.4.3
+# Central registry defining all analytics modules and their dependencies
+
+modules:
+  # ===== PHASE 1: Backend Infrastructure =====
+
+  analytics-validation:
+    path: lib/analytics/validation.ts
+    status: pending
+    version: 1.0.0
+
+  analytics-repository:
+    path: lib/analytics/repository.ts
+    status: pending
+    version: 1.0.0
+    depends_on: [analytics-validation]
+
+  analytics-api:
+    path: app/api/analytics/route.ts
+    status: pending
+    version: 1.0.0
+    depends_on: [analytics-validation, analytics-repository]
+
+  analytics-migration:
+    path: migrations/analytics_events.sql
+    status: implemented
+    version: 1.0.0
+
+  # ===== PHASE 2: Frontend Analytics Core =====
+
+  device-id:
+    path: lib/analytics/device-id.ts
+    status: pending
+    version: 1.0.0
+
+  session-id:
+    path: lib/analytics/session-id.ts
+    status: pending
+    version: 1.0.0
+
+  analytics-context:
+    path: lib/analytics/context.ts
+    status: pending
+    version: 1.0.0
+    depends_on: [device-id, session-id]
+
+  analytics-sink-ga4:
+    path: lib/analytics/sinks/ga4.ts
+    status: pending
+    version: 1.0.0
+
+  analytics-sink-backend:
+    path: lib/analytics/sinks/backend.ts
+    status: pending
+    version: 1.0.0
+
+  analytics-track:
+    path: lib/analytics/track.ts
+    status: pending
+    version: 1.0.0
+    depends_on: [analytics-context, analytics-sink-ga4, analytics-sink-backend]
+
+  # ===== PHASE 3: Event Instrumentation =====
+
+  scan-page-instrumentation:
+    path: app/scan/page.tsx (modified)
+    status: pending
+    version: 1.0.0
+    depends_on: [analytics-track]
+
+  report-page-instrumentation:
+    path: app/scan/report/[id]/page.tsx (modified)
+    status: pending
+    version: 1.0.0
+    depends_on: [analytics-track]
+
+  poster-page-instrumentation:
+    path: app/scan/poster/[id]/page.tsx (modified)
+    status: pending
+    version: 1.0.0
+    depends_on: [analytics-track]
+
+execution_order:
+  # Phase 1: Backend Infrastructure (parallel where possible)
+  - analytics-migration           # SQL migration, no dependencies
+  - analytics-validation           # Validation logic, no dependencies
+  - analytics-repository           # Depends on validation
+  - analytics-api                  # Depends on validation + repository
+
+  # Phase 2: Frontend Core (parallel where possible)
+  - device-id                      # No dependencies
+  - session-id                     # No dependencies
+  - analytics-context              # Depends on device-id + session-id
+  - analytics-sink-ga4             # No dependencies
+  - analytics-sink-backend         # No dependencies
+  - analytics-track                # Depends on context + sinks
+
+  # Phase 3: Instrumentation (parallel)
+  - scan-page-instrumentation      # Depends on track
+  - report-page-instrumentation    # Depends on track
+  - poster-page-instrumentation    # Depends on track

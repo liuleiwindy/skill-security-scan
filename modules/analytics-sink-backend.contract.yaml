@@ -1,0 +1,87 @@
+module:
+  name: analytics-sink-backend
+  path: lib/analytics/sinks/backend.ts
+  status: pending
+  version: 1.0.0
+
+exports:
+  - name: sendToBackend
+    signature: (events: AnalyticsEvent[]) => Promise<void>
+    description: Send analytics events to backend /api/analytics endpoint
+
+  - name: sendToBackendSingle
+    signature: (eventName: string, props: Record<string, unknown>) => Promise<void>
+    description: Send single event to backend (convenience wrapper)
+
+dependencies: []
+
+constraints:
+  allow_duplicate_impl: false
+  forbid_impl:
+  - Direct fetch() calls to /api/analytics in business code
+  - Alternative backend ingestion methods
+  - Bypassing batch sending for large numbers of events
+
+api_contract:
+  endpoint: /api/analytics
+  method: POST
+  content_type: application/json
+  timeout: 5000ms
+
+batching:
+  enabled: true
+  max_batch_size: 50 events
+  flush_interval: 5000ms
+  strategy: Accumulate and send periodically
+
+request_body:
+  type: array
+  items: AnalyticsEventPayload
+
+response:
+  success: 202 Accepted
+  body:
+    accepted: number
+    rejected: number
+
+error_handling:
+  - Log errors but don't throw (fail silently)
+  - Retry failed requests with exponential backoff
+  - Max retries: 3
+  - Discard events after max retries (with warning log)
+  - Use navigator.sendBeacon() for page unload events
+
+implementation_notes: |
+  - Use fetch() API for HTTP requests
+  - Always batch events (don't send one-by-one)
+  - Implement batching buffer with max size and flush interval
+  - Use keepalive flag for critical events during page unload
+  - Add retry logic with exponential backoff
+  - Respect AbortController timeout
+  - Handle network errors gracefully
+  - Don't block main thread with backend calls
+
+retry_strategy:
+  max_retries: 3
+  backoff_factor: 2
+  initial_delay: 1000ms
+  max_delay: 10000ms
+
+privacy_considerations:
+  - Only send events defined in spec whitelist
+  - Never send PII in event payloads
+  - Ensure HTTPS for all requests
+  - Respect user privacy settings if implemented
+
+performance_considerations:
+  - Batch events to minimize HTTP requests
+  - Use requestIdleCallback for low-priority sends
+  - Don't block user interactions with analytics calls
+  - Use navigator.sendBeacon() for reliability during page unload
+
+testing:
+  - Mock fetch() in tests
+  - Test batching behavior
+  - Test retry logic
+  - Test error handling
+  - Test sendBeacon fallback

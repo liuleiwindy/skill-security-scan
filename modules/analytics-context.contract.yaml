@@ -1,0 +1,83 @@
+module:
+  name: analytics-context
+  path: lib/analytics/context.ts
+  status: pending
+  version: 1.0.0
+
+exports:
+  - name: enrichEventContext
+    signature: (eventName: string, props: Record<string, unknown>) => EnrichedEventContext
+    description: Enrich event payload with shared context (device_id, session_id, ts, page context, src)
+
+  - name: getCurrentPageContext
+    signature: () => PageContext
+    description: Get current page context (path, referrer, etc.)
+
+  - name: getSourceAttribution
+    signature: () => string | null
+    description: Get traffic source attribution from URL parameters
+
+dependencies:
+  - module: lib/analytics/device-id.ts
+    imports: [getDeviceId]
+    required: true
+
+  - module: lib/analytics/session-id.ts
+    imports: [getSessionId]
+    required: true
+
+constraints:
+  allow_duplicate_impl: false
+  forbid_impl:
+  - Directly accessing browser APIs in event tracking code
+  - Manually adding device_id/session_id in business code
+  - Duplicate context enrichment logic
+
+context_fields:
+  ts: number
+    description: Event timestamp in milliseconds
+    source: Date.now()
+
+  device_id: string
+    description: Anonymous device identifier
+    source: getDeviceId()
+
+  session_id: string
+    description: Anonymous session identifier
+    source: getSessionId()
+
+  page_path: string
+    description: Current page path
+    source: window.location.pathname
+
+  page_referrer: string | null
+    description: HTTP referrer
+    source: document.referrer
+
+  src: string | null
+    description: Traffic source attribution
+    source: URLSearchParams.get('src')
+
+  ua_basic: string
+    description: Basic user agent info
+    source: navigator.userAgent (truncated if needed)
+
+implementation_notes: |
+  - Always call getDeviceId() and getSessionId() for enrichment
+  - Use Date.now() for consistent timestamp format
+  - Extract src from URLSearchParams (e.g., ?src=poster_qr)
+  - Include page path and referrer for context
+  - Truncate user agent if too long (avoid oversized payloads)
+  - Context enrichment should be transparent to business code
+  - All business code should call enrichEventContext, not add fields manually
+
+error_handling:
+  - If device_id generation fails, use fallback value
+  - If session_id generation fails, use fallback value
+  - If page context unavailable, use sensible defaults
+  - Never throw errors from context enrichment (fail gracefully)
+
+performance_considerations:
+  - Cache device_id and session_id after first retrieval
+  - Avoid repeated localStorage/sessionStorage access in same session
+  - Minimize DOM reads (cache page context)

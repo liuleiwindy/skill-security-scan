@@ -1,0 +1,52 @@
+module:
+  name: analytics-repository
+  path: lib/analytics/repository.ts
+  status: pending
+  version: 1.0.0
+
+exports:
+  - name: insertAnalyticsEvent
+    signature: (event: AnalyticsEvent) => Promise<void>
+    description: Insert a single analytics event into database
+
+  - name: insertAnalyticsEvents
+    signature: (events: AnalyticsEvent[]) => Promise<void>
+    description: Insert multiple analytics events in a single transaction
+
+dependencies:
+  - module: @vercel/postgres
+    imports: [sql]
+    required: true
+
+  - module: lib/analytics/validation.ts
+    imports: [validateEventPayload, validateErrorCode]
+    required: true
+
+constraints:
+  allow_duplicate_impl: false
+  forbid_impl:
+    - Direct SQL queries bypassing this repository
+    - Alternative database access patterns
+    - Manual transaction handling outside this module
+
+types:
+  AnalyticsEvent:
+    id: string (uuid)
+    event_name: string
+    scan_id: string | null
+    device_id: string
+    session_id: string | null
+    src: string | null
+    status: string | null
+    error_code: string | null
+    duration_ms: number | null
+    props: Record<string, unknown> | null
+    created_at: Date
+
+implementation_notes: |
+  - Use @vercel/postgres sql template
+  - Wrap inserts in transactions for batch operations
+  - Leverage prepared statements for performance
+  - Handle database errors gracefully (log, don't throw to client)
+  - Follow existing SQL repository pattern in codebase
+  - JSONB props should be serialized as JSON

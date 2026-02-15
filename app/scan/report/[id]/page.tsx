@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { ScanReport, Finding } from "@/lib/validation";
 import { getStoredReport } from "@/lib/store";
 import { ReportShareActions } from "./report-share-actions";
+import { ReportInstrumentation } from "./report-instrumentation";
 import styles from "./report.module.css";
 
 function severityColor(severity: Finding["severity"]) {
@@ -37,6 +38,7 @@ export default async function ReportPage({
 
   return (
     <div className={styles.container}>
+      <ReportInstrumentation scanId={id} />
       <header className={styles.topBar}>
         <Link href="/scan" className={styles.topLinkPrimary}>
           ← New Scan

@@ -1,0 +1,139 @@
+module:
+  name: poster-page-instrumentation
+  path: app/scan/poster/[id]/page.tsx (modified)
+  status: pending
+  version: 1.0.0
+
+exports:
+  - name: posterPageViewEvent
+    signature: (scan_id: string) => void
+    description: Trigger poster_page_view event on page first render
+
+  - name: posterSaveClickedEvent
+    signature: (scan_id: string, method: 'download' | 'share') => void
+    description: Trigger poster_save_clicked event when user clicks save/share
+
+  - name: posterDownloadResultEvent
+    signature: (scan_id: string, status: 'success' | 'error', duration_ms: number, error_type?: string) => void
+    description: Trigger poster_download_result event when download completes
+
+  - name: posterShareResultEvent
+    signature: (scan_id: string, status: 'success' | 'error', duration_ms: number, error_type?: string) => void
+    description: Trigger poster_share_result event when share completes
+
+dependencies:
+  - module: lib/analytics/track.ts
+    imports: [track]
+    required: true
+
+  - module: lib/download.ts
+    imports: [downloadPoster* functions]
+    required: true
+
+  - module: lib/mobile-share.ts
+    imports: [sharePoster functions]
+    required: true
+
+constraints:
+  allow_duplicate_impl: false
+  forbid_impl:
+  - Direct gtag() calls in poster page
+  - Direct fetch() calls to /api/analytics in poster page
+  - Alternative event triggering mechanisms
+  - Calling track() from download/share utility functions (must be called from poster page)
+
+event_triggers:
+  poster_page_view:
+    trigger: Page first render (useEffect with empty deps)
+    required_props: [scan_id, ts]
+    implementation: track('poster_page_view', { scan_id })
+
+  poster_save_clicked:
+    trigger: User clicks save or share button
+    required_props: [scan_id, method, ts]
+    method:
+      download: User clicked download button
+      share: User clicked share button
+    implementation: track('poster_save_clicked', { scan_id, method })
+
+  poster_download_result:
+    trigger: Download flow completes (success or error)
+    success_definition:
+      - Browser download flow has been triggered
+      - Poster blob obtained and download action executed
+      - downloadPoster* promise resolved without exception
+    required_props: [scan_id, status, duration_ms, ts]
+    optional_props: [error_type]
+    implementation: track('poster_download_result', { scan_id, status, duration_ms, error_type })
+
+  poster_share_result:
+    trigger: Share flow completes (success or error)
+    success_definition:
+      - navigator.share(...) resolves
+    required_props: [scan_id, status, duration_ms, ts]
+    optional_props: [error_type]
+    note: External platform publish completion is not observable and must not be counted here
+    implementation: track('poster_share_result', { scan_id, status, duration_ms, error_type })
+
+implementation_notes: |
+  - PosterPageContent is the client component that handles interactions
+  - Call posterPageViewEvent on component mount
+  - Call posterSaveClickedEvent immediately when button is clicked (before download/share starts)
+  - Measure duration from button click to completion for result events
+  - Track download result even if download fails (with error details)
+  - Track share result even if share fails (with error details)
+  - All track() calls are fire-and-forget (no await)
+  - Don't block UI with analytics calls
+  - Error handling should not affect download/share functionality
+
+success_criteria:
+  download:
+    - downloadPoster* promise resolves
+    - Browser download triggered successfully
+    - No exceptions thrown
+
+  share:
+    - navigator.share() promise resolves
+    - Share API completed successfully
+    - User selected a platform (even if they cancel, share resolves)
+
+error_type_mapping:
+  download:
+    network: download_network
+    timeout: download_timeout
+    aborted: download_aborted
+    not_supported: download_not_supported
+    unknown: download_unknown
+
+  share:
+    not_supported: share_not_supported (Web Share API not available)
+    aborted: share_aborted (user cancelled share dialog)
+    timeout: share_timeout
+    unknown: share_unknown
+
+duration_measurement:
+  - Start timer when poster_save_clicked fires
+  - Stop timer when download/share promise resolves or rejects
+  - Include time for user interactions (e.g., selecting share platform)
+  - Duration is useful for performance monitoring
+
+qr_link_inclusion:
+  - QR code on poster should link to /scan/report/{id}?src=poster_qr
+  - This enables QR-attributed traffic tracking
+  - src=poster_qr is tracked as poster_qr_visit event in report page
+
+performance_considerations:
+  - Don't block poster rendering with analytics
+  - Duration measurement should be accurate but not add overhead
+  - Use requestIdleCallback for non-critical result events if needed
+
+testing:
+  - Test poster_page_view fires on page load
+  - Test poster_save_clicked fires for both download and share
+  - Test download result tracking (success and error cases)
+  - Test share result tracking (success and error cases)
+  - Test duration measurement accuracy
+  - Test error_type mapping
+  - Test that analytics don't block download/share actions
+  - Mock track() in component tests
+  - Mock downloadPoster* and sharePoster in tests

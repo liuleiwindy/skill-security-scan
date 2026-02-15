@@ -7,14 +7,14 @@
 
 ## 1. Execution Status
 
-- Phase: Active
+- Phase: Completed
 - Spec status: Active
-- Implementation approval: Pending
+- Implementation approval: Ready for release
 
 ## 2. Action List
 
 1. Add frontend analytics helper
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - `track(eventName, props)` utility
      - shared event payload enrichments (`ts`, `device_id`, page context)
@@ -22,7 +22,7 @@
      - GA4 adapter feature-gated by `NEXT_PUBLIC_GA4_MEASUREMENT_ID`
 
 2. Implement `device_id` lifecycle
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - UUID generation on first visit
      - localStorage primary persistence
@@ -30,7 +30,7 @@
      - deterministic read priority
 
 3. Add backend analytics ingestion
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - `POST /api/analytics`
       - `analytics_events` schema/migration
@@ -38,14 +38,14 @@
      - native SQL migration script(s), no new ORM dependency
 
 4. Implement `session_id` lifecycle
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - per-tab/session UUID generation
      - `sessionStorage` persistence
      - event payload enrichment with nullable compatibility
 
 5. Instrument funnel events
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - `scan_page_view`
      - `scan_submit_clicked`
@@ -55,33 +55,33 @@
      - `poster_save_clicked`
 
 6. Instrument action-specific result events
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - `poster_download_result`
      - `poster_share_result`
      - strict success criteria per action
 
 7. Instrument QR attribution
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - QR links include `src=poster_qr`
      - `poster_qr_visit` first-load only
      - UV/PV-ready fields with device dedupe key
 
 8. Standardize error code taxonomy
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - `{domain}_{type}` convention in analytics payloads
      - domain/type whitelist for scan/poster/download/share/analytics
 
 9. Add error/latency dimensions
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - `error_code/error_type` on failed paths
      - `duration_ms` for scan/poster/save
 
 10. Verification
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - event fire tests for all funnel steps
      - QR source and first-load guard validation
@@ -102,3 +102,5 @@
 5. GA4 and backend ingestion both receive events from the same `track()` call path.
 6. `device_id` strategy is implemented and stable across page reloads.
 7. Error codes comply with standard naming convention.
+
+Gate result: passed (2026-02-15 local verification)

@@ -1,0 +1,93 @@
+module:
+  name: analytics-track
+  path: lib/analytics/track.ts
+  status: pending
+  version: 1.0.0
+
+exports:
+  - name: track
+    signature: (eventName: string, props?: Record<string, unknown>) => void
+    description: Single business entrypoint for all analytics tracking
+
+dependencies:
+  - module: lib/analytics/context.ts
+    imports: [enrichEventContext]
+    required: true
+
+  - module: lib/analytics/sinks/ga4.ts
+    imports: [sendToGA4]
+    required: true
+
+  - module: lib/analytics/sinks/backend.ts
+    imports: [sendToBackendSingle]
+    required: true
+
+constraints:
+  allow_duplicate_impl: false
+  forbid_impl:
+  - Direct gtag() calls in business code
+  - Direct fetch() calls to /api/analytics in business code
+  - Alternative tracking functions
+  - Calling sinks directly from business code
+
+design_principles:
+  - Single entrypoint for all business tracking
+  - Business code must call track() only
+  - No transport-specific logic in business code
+  - Dual-write: GA4 + backend (both called)
+  - GA4 is optional (no-op if not configured)
+  - Backend is mandatory (always called)
+
+event_flow:
+  1: Business code calls track(eventName, props)
+  2: enrichEventContext() adds device_id, session_id, ts, page context, src
+  3: sendToGA4() sends event to GA4 (no-op if not configured)
+  4: sendToBackendSingle() sends event to backend API
+
+usage_pattern:
+  // Business code example
+  import { track } from '@/lib/analytics/track'
+
+  track('scan_page_view')
+  track('scan_submit_clicked', { input_type: 'github_url' })
+  track('scan_result', { status: 'success', duration_ms: 1500, scan_id: 'xxx' })
+
+implementation_notes: |
+  - track() is fire-and-forget (returns void, not Promise)
+  - Calls enrichEventContext() first to add shared context
+  - Calls sendToGA4() and sendToBackendSingle() in sequence
+  - GA4 call errors are caught and logged (don't throw)
+  - Backend call errors are caught and logged (don't throw)
+  - Never block business logic with analytics calls
+  - Business code never needs to worry about transport details
+  - Event validation should happen on backend, not here
+
+error_handling:
+  - Never throw errors from track() function
+  - Log errors from sinks but continue execution
+  - If context enrichment fails, use sensible defaults
+  - If both sinks fail, still don't throw (fail silently)
+
+performance_considerations:
+  - Minimal overhead in track() function
+  - Don't block main thread
+  - Sink calls should be async but track() returns void
+  - Consider requestIdleCallback for non-critical events
+
+testing:
+  - Test that both sinks are called
+  - Test that context is enriched correctly
+  - Test that errors in sinks don't throw
+  - Test with and without GA4 configured
+  - Mock sinks in unit tests
+
+event_whitelist:
+  - scan_page_view
+  - scan_submit_clicked
+  - scan_result
+  - report_page_view
+  - poster_page_view
+  - poster_save_clicked
+  - poster_download_result
+  - poster_share_result
+  - poster_qr_visit

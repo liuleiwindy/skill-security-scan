@@ -55,6 +55,7 @@ vi.mock('@/lib/mobile-share', () => ({
   isMobileDevice: vi.fn(),
   isIOSSafari: vi.fn(),
   isAndroidChrome: vi.fn(),
+  isWeChatWebView: vi.fn(),
 }));
 
 vi.mock('@/lib/download', () => ({
@@ -73,6 +74,7 @@ import {
   isMobileDevice,
   isIOSSafari,
   isAndroidChrome,
+  isWeChatWebView,
 } from '@/lib/mobile-share';
 import {
   fetchImageAsFile,
@@ -91,6 +93,7 @@ describe('SaveButton - Mobile Fallback Integration (Task 3.3)', () => {
     vi.mocked(isMobileDevice).mockReturnValue(true);
     vi.mocked(isIOSSafari).mockReturnValue(false);
     vi.mocked(isAndroidChrome).mockReturnValue(false);
+    vi.mocked(isWeChatWebView).mockReturnValue(false);
     vi.mocked(canShareFiles).mockReturnValue(true);
     vi.mocked(getBrowserInfo).mockReturnValue({ name: 'Chrome', version: 120, isSupported: true });
     vi.mocked(isDesktopEnvironment).mockReturnValue(false);

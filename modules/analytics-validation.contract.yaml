@@ -1,0 +1,84 @@
+module:
+  name: analytics-validation
+  path: lib/analytics/validation.ts
+  status: pending
+  version: 1.0.0
+
+exports:
+  - name: validateEventPayload
+    signature: (payload: unknown) => ValidationResult
+    description: Validate analytics event payload against schema
+
+  - name: validateEventName
+    signature: (eventName: string) => boolean
+    description: Check if event name is in the allowed whitelist
+
+  - name: validateErrorCode
+    signature: (errorCode: string) => boolean
+    description: Validate error code format: {domain}_{type}
+
+  - name: isAllowedDomain
+    signature: (domain: string) => boolean
+    description: Check if error domain is in allowed set
+
+  - name: isAllowedErrorType
+    signature: (errorType: string) => boolean
+    description: Check if error type is in allowed set
+
+dependencies:
+  - module: zod
+    imports: [z]
+    required: true
+
+constraints:
+  allow_duplicate_impl: false
+  forbid_impl:
+    - Custom validation logic outside this module
+    - Bypassing validation for analytics API
+
+validation_rules:
+  event_name_whitelist:
+    - scan_page_view
+    - scan_submit_clicked
+    - scan_result
+    - report_page_view
+    - poster_page_view
+    - poster_save_clicked
+    - poster_download_result
+    - poster_share_result
+    - poster_qr_visit
+
+  error_domains:
+    - scan
+    - poster
+    - download
+    - share
+    - analytics
+
+  error_types:
+    - timeout
+    - network
+    - http_4xx
+    - http_5xx
+    - validation
+    - not_supported
+    - aborted
+    - unknown
+
+  required_fields_by_event:
+    scan_page_view: [ts]
+    scan_submit_clicked: [input_type, ts]
+    scan_result: [status, duration_ms, ts]
+    report_page_view: [scan_id, ts]
+    poster_page_view: [scan_id, ts]
+    poster_save_clicked: [scan_id, method, ts]
+    poster_download_result: [scan_id, status, duration_ms, ts]
+    poster_share_result: [scan_id, status, duration_ms, ts]
+    poster_qr_visit: [scan_id, src, ua_basic, ts]
+
+implementation_notes: |
+  - Use Zod for runtime validation
+  - Return structured validation errors with field paths
+  - Enforce event whitelist strictly
+  - Enforce error code format {domain}_{type}
+  - Support partial validation for optional fields

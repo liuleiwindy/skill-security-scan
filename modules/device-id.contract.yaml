@@ -1,0 +1,58 @@
+module:
+  name: device-id
+  path: lib/analytics/device-id.ts
+  status: pending
+  version: 1.0.0
+
+exports:
+  - name: getDeviceId
+    signature: () => string
+    description: Get or generate anonymous device ID with persistence
+
+  - name: generateDeviceId
+    signature: () => string
+    description: Generate new UUID-based device ID
+
+dependencies: []
+
+constraints:
+  allow_duplicate_impl: false
+  forbid_impl:
+    - Alternative device ID generation strategies
+    - Using sessionStorage for device ID (wrong scope)
+    - Implementing device ID tracking without persistence
+
+persistence_strategy:
+  primary: localStorage
+  backup: cookie (365 days)
+  key_name: security_scan_anon_device_id
+
+read_priority:
+  1: localStorage
+  2: cookie
+  3: generate new (if neither exists)
+
+write_strategy:
+  - Write to localStorage
+  - Write to cookie with max-age=31536000 (365 days)
+  - Set cookie path=/ for domain-wide tracking
+
+generation_rules:
+  method: crypto.randomUUID()
+  format: UUID v4
+  uniqueness: Cryptographically random
+
+implementation_notes: |
+  - Use browser crypto.randomUUID() for secure UUID generation
+  - Check localStorage first, then cookie
+  - If both missing, generate new and persist to both
+  - Device ID is anonymous, never link to personal identity
+  - Handle cases where localStorage is disabled (fallback to cookie only)
+  - Device ID should persist across page reloads and sessions
+  - No server-side generation (client-side only)
+
+privacy_considerations:
+  - Device ID is anonymous and cannot be linked to individuals
+  - Stored locally, never transmitted in plain text for identification
+  - Users can clear by clearing browser data
+  - No cross-site tracking (same domain only)

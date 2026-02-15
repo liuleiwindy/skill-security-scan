@@ -1,0 +1,85 @@
+module:
+  name: analytics-api
+  path: app/api/analytics/route.ts
+  status: pending
+  version: 1.0.0
+
+exports:
+  - name: POST
+    signature: (request: NextRequest) => Promise<Response>
+    description: Ingest analytics events from frontend
+
+dependencies:
+  - module: next/server
+    imports: [NextRequest, NextResponse]
+    required: true
+
+  - module: lib/analytics/validation.ts
+    imports: [validateEventPayload, validateEventName]
+    required: true
+
+  - module: lib/analytics/repository.ts
+    imports: [insertAnalyticsEvents]
+    required: true
+
+constraints:
+  allow_duplicate_impl: false
+  forbid_impl:
+    - Alternative analytics ingestion endpoints
+    - Bypassing validation for event payloads
+    - Returning detailed error messages to clients
+
+api_contract:
+  method: POST
+  path: /api/analytics
+  content_type: application/json
+  request_body:
+    type: array
+    items: AnalyticsEventPayload
+    min_items: 1
+    max_items: 50
+
+  success_response:
+    status: 202
+    body:
+      accepted: number
+      rejected: number
+
+  error_responses:
+    - status: 400
+      when: Invalid JSON or payload structure
+      body:
+        error: string
+        details: ValidationError[] | null
+
+    - status: 413
+      when: Payload too large (> 1MB)
+      body:
+        error: string
+
+    - status: 500
+      when: Internal server error
+      body:
+        error: string
+
+validation_rules:
+  - Validate event names against whitelist
+  - Validate error codes against format
+  - Enforce required fields per event type
+  - Reject malformed events silently (log, continue with valid ones)
+  - Limit batch size to prevent abuse
+
+security_considerations:
+  - No authentication required (anonymous events)
+  - Rate limiting recommended (e.g., 10 requests/second per IP)
+  - Validate payload size to prevent DoS
+  - Sanitize error messages (don't leak internals)
+  - Log all rejected events for debugging
+
+implementation_notes: |
+  - Use Next.js App Router API route
+  - Return 202 Accepted (async processing)
+  - Process events in batch for efficiency
+  - Partial acceptance: accept valid events, reject invalid ones
+  - Log validation failures without exposing to client
+  - Consider adding rate limiting middleware
