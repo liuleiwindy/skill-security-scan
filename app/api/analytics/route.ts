@@ -230,11 +230,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         toDatabaseEvent(event, deviceId, sessionId)
       );
 
-      // Insert events asynchronously (fire and forget)
-      // We don't await this to return 202 immediately
-      insertAnalyticsEvents(databaseEvents).catch((error) => {
-        console.error('[analytics-api] Failed to insert events:', error);
-      });
+      // IMPORTANT:
+      // Await insertion before returning response to avoid event loss in
+      // serverless runtimes that may freeze immediately after response is sent.
+      await insertAnalyticsEvents(databaseEvents);
     }
 
     // Return 202 Accepted with counts
