@@ -1,9 +1,9 @@
-# OpenSpec Spec: Security Scan Intake Timeout + Adaptive GitHub Concurrency V0.2.3.6
+# OpenSpec Released Spec: Security Scan Intake Timeout + Adaptive GitHub Concurrency V0.2.3.6
 
 ## 0. Meta
 
 - Date: 2026-02-14
-- Stage: Active
+- Stage: Released
 - Owner: Product + Engineering
 - Previous release baseline: `specs/released/2026-02-13-security-scan-abuse-fallback-controls-v0.2.3.5.md`
 

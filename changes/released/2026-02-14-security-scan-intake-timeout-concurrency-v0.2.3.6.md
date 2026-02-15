@@ -2,14 +2,14 @@
 
 ## 0. Links
 
-- Active spec: `specs/active/2026-02-14-security-scan-intake-timeout-concurrency-v0.2.3.6.md`
+- Released spec: `specs/released/2026-02-14-security-scan-intake-timeout-concurrency-v0.2.3.6.md`
 - Implementation playbook: `docs/archive/v0.2.2-implementation-playbook.md`
 - Previous release baseline: `specs/released/2026-02-13-security-scan-abuse-fallback-controls-v0.2.3.5.md`
 
 ## 1. Execution Status
 
-- Phase: Active
-- Spec status: Active
+- Phase: Released
+- Spec status: Released
 - Implementation approval: Completed
 
 ## 2. Action List
