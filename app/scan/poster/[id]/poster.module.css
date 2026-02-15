@@ -11,6 +11,7 @@
     radial-gradient(76% 52% at 50% 40%, rgba(8, 54, 42, 0.46), transparent 72%),
     linear-gradient(180deg, #030604 0%, #040705 100%);
   position: relative;
+  padding-top: 16px;
 }
 
 .container::before {
@@ -39,7 +40,7 @@
   position: relative;
   z-index: 1;
   width: min(1320px, calc(100% - 24px));
-  margin: 16px auto 8px;
+  margin: 0 auto 8px;
   padding: 14px 18px;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -219,7 +220,7 @@
   }
 
   .header {
-    margin-top: 10px;
+    margin-top: 0;
     margin-bottom: 6px;
     padding: 10px 12px;
   }
