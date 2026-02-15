@@ -3,13 +3,13 @@
 ## 0. Links
 
 - Proposal: `specs/proposals/2026-02-13-security-scan-viral-trust-loop-v0.2.4.md`
-- Active spec: `specs/active/2026-02-14-security-scan-viral-trust-loop-v0.2.4.md`
+- Released spec: `specs/released/2026-02-14-security-scan-viral-trust-loop-v0.2.4.md`
 - Implementation playbook: `docs/v0.2.4-poster-dynamic-rendering-playbook.md`
 - Baseline: `specs/released/2026-02-13-security-scan-abuse-fallback-controls-v0.2.3.5.md`
 
 ## 1. Execution Status
 
-- Phase: Active
+- Phase: Released
 - Version line: `v0.2.4` (master)
 - Current slice: `v0.2.4.3`
 - Implementation approval: `v0.2.4.1` ready_for_submit

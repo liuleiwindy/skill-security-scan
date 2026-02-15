@@ -2,13 +2,13 @@
 
 ## 0. Links
 
-- Active spec: `specs/active/2026-02-15-security-scan-analytics-funnel-v0.2.4.3.md`
-- Previous active baseline: `specs/active/2026-02-14-security-scan-viral-trust-loop-v0.2.4.2.md`
+- Released spec: `specs/released/2026-02-15-security-scan-analytics-funnel-v0.2.4.3.md`
+- Previous active baseline: `specs/released/2026-02-14-security-scan-viral-trust-loop-v0.2.4.2.md`
 
 ## 1. Execution Status
 
-- Phase: Completed
-- Spec status: Active
+- Phase: Released
+- Spec status: Released
 - Implementation approval: Ready for release
 
 ## 2. Action List

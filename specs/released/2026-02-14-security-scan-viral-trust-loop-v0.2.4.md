@@ -1,9 +1,9 @@
-# OpenSpec Active Spec: Security Scan Viral Trust Loop V0.2.4 (Master)
+# OpenSpec Released Spec: Security Scan Viral Trust Loop V0.2.4 (Master)
 
 ## 0. Meta
 
 - Date: 2026-02-14
-- Stage: Active
+- Stage: Released
 - Owner: Product + Engineering
 - Proposal source: `specs/proposals/2026-02-13-security-scan-viral-trust-loop-v0.2.4.md`
 - Previous release baseline: `specs/released/2026-02-13-security-scan-abuse-fallback-controls-v0.2.3.5.md`

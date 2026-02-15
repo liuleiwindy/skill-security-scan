@@ -3,7 +3,7 @@
 ## 0. Links
 
 - Released spec: `specs/released/2026-02-15-security-scan-style-optimization-v0.2.4.4.md`
-- Previous active baseline: `specs/active/2026-02-15-security-scan-analytics-funnel-v0.2.4.3.md`
+- Previous active baseline: `specs/released/2026-02-15-security-scan-analytics-funnel-v0.2.4.3.md`
 
 ## 1. Execution Status
 

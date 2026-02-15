@@ -1,9 +1,9 @@
-# OpenSpec Active Spec: Security Scan Viral Trust Loop V0.2.4.0 (Core Render Engine)
+# OpenSpec Released Spec: Security Scan Viral Trust Loop V0.2.4.0 (Core Render Engine)
 
 ## 0. Meta
 
 - Date: 2026-02-14
-- Stage: Active
+- Stage: Released
 - Owner: Product + Engineering
 - Parent master spec: `specs/active/2026-02-14-security-scan-viral-trust-loop-v0.2.4.md`
 - Proposal source: `specs/proposals/2026-02-13-security-scan-viral-trust-loop-v0.2.4.md`

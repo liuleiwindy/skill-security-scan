@@ -3,13 +3,13 @@
 ## 0. Links
 
 - Master change plan: `changes/active/2026-02-14-security-scan-viral-trust-loop-v0.2.4.md`
-- Slice spec: `specs/active/2026-02-14-security-scan-viral-trust-loop-v0.2.4.0.md`
-- Master spec: `specs/active/2026-02-14-security-scan-viral-trust-loop-v0.2.4.md`
+- Slice spec: `specs/released/2026-02-14-security-scan-viral-trust-loop-v0.2.4.0.md`
+- Master spec: `specs/released/2026-02-14-security-scan-viral-trust-loop-v0.2.4.md`
 - Render module entry: `lib/poster/render-poster.ts`
 
 ## 1. Execution Status
 
-- Phase: Active
+- Phase: Released
 - Slice: `v0.2.4.0`
 - Status: completed
 

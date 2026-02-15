@@ -3,12 +3,12 @@
 ## 0. Links
 
 - Master change plan: `changes/active/2026-02-14-security-scan-viral-trust-loop-v0.2.4.md`
-- Slice spec: `specs/active/2026-02-14-security-scan-viral-trust-loop-v0.2.4.2.md`
-- API baseline: `specs/active/2026-02-14-security-scan-viral-trust-loop-v0.2.4.1.md`
+- Slice spec: `specs/released/2026-02-14-security-scan-viral-trust-loop-v0.2.4.2.md`
+- API baseline: `specs/released/2026-02-14-security-scan-viral-trust-loop-v0.2.4.1.md`
 
 ## 1. Execution Status
 
-- Phase: Sealed
+- Phase: Released
 - Slice: `v0.2.4.2`
 - Status: completed
 - Seal date: 2026-02-15
