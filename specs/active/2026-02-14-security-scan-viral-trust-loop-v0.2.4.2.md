@@ -3,10 +3,11 @@
 ## 0. Meta
 
 - Date: 2026-02-14
-- Stage: Active
+- Stage: Sealed (Accepted)
 - Owner: Product + Engineering
 - Parent master spec: `specs/active/2026-02-14-security-scan-viral-trust-loop-v0.2.4.md`
 - Previous slice baseline: `specs/active/2026-02-14-security-scan-viral-trust-loop-v0.2.4.1.md`
+- Seal date: 2026-02-15
 
 ## 1. Objective
 
@@ -49,6 +50,10 @@ Ship V0.2.4.2 as the poster page integration slice:
 1. Primary action: `Save Poster`.
 2. Mobile behavior:
    - if `navigator.share` with file support is available, use Web Share API.
+   - WeChat webview path:
+     - first try `wx.previewImage` (official JSSDK path)
+     - fallback to `WeixinJSBridge.invoke("imagePreview")`
+     - if both fail, show bottom-sheet guidance
    - fallback UI uses bottom-sheet (not toast-only) with long-press guidance.
    - fallback text:
      - title: `Save Poster`
@@ -57,6 +62,7 @@ Ship V0.2.4.2 as the poster page integration slice:
    - compatibility policy:
      - iOS Safari: use long-press guidance when Web Share file is unavailable.
      - Android Chrome: prefer Web Share file path; fallback to long-press guidance on rejection.
+     - WeChat webview: use preview-image path before generic long-press fallback.
    - Web Share failure handling:
      - handle `AbortError` (user cancelled): silent close, no error UI.
      - handle `NotAllowedError` / `TypeError` / unknown: show fallback bottom-sheet.
@@ -105,11 +111,12 @@ Ship V0.2.4.2 as the poster page integration slice:
    - use low-resolution static poster skeleton + 8px blur.
    - keep subtle shimmer optional; do not block interaction.
 3. Timeout policy:
-   - image request soft-timeout at `8s` for UI fallback messaging.
-   - on timeout, keep placeholder visible and show retry CTA.
+   - image request soft-timeout at `20s` for UI fallback messaging.
+   - on timeout, keep request in-flight (no forced abort), keep placeholder visible and show retry CTA.
 4. Swap behavior:
    - full image `onload` replaces placeholder in-place with no layout shift.
    - if full image never resolves, keep placeholder and actionable fallback.
+   - WeChat webview must render poster using real network URL (not `blob:` URL) to preserve long-press save success.
 
 ### 4.6 Performance Budget (V0.2.4.2)
 
@@ -124,7 +131,7 @@ Target environment: Vercel Preview + mobile 4G simulation (or equivalent throttl
    - placeholder must appear within `300ms` after navigation.
    - placeholder persists until full image decode succeeds or timeout fallback is shown.
 4. Timeout fallback trigger:
-   - if full image not visible by `8s`, show retry CTA while keeping placeholder.
+   - if full image not visible by `20s`, show retry CTA while keeping placeholder.
 
 ### 4.7 Component Interface Contract
 
@@ -135,7 +142,7 @@ export interface PosterImageProps {
   scanId: string;
   src?: string; // default: /api/scan/:id/poster/image
   placeholderSrc?: string;
-  timeoutMs?: number; // default: 8000
+  timeoutMs?: number; // default: 20000
   onLoad?: () => void;
   onError?: (type: "timeout" | "http-404" | "http-5xx" | "network") => void;
   onTimeout?: () => void;
@@ -255,6 +262,9 @@ Required fixture assertions:
 6. Error and timeout paths show actionable fallback.
 7. Performance budgets in section 4.6 pass in preview validation.
 8. `npm run build` passes, and the v0.2.4.2 target test suite passes.
+9. WeChat in-app save flow is accepted:
+   - tap `Save Poster` opens image preview path
+   - long-press save is available and validated with real network image URL.
 
 ### 7.1 Target Test Suite (Noise-free Gate)
 

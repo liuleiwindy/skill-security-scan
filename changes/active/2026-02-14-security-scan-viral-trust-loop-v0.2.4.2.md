@@ -8,9 +8,10 @@
 
 ## 1. Execution Status
 
-- Phase: Active
+- Phase: Sealed
 - Slice: `v0.2.4.2`
 - Status: completed
+- Seal date: 2026-02-15
 
 ## 2. Tasks (Slice Only)
 
@@ -46,11 +47,24 @@
      - fixture-based regression checks for defined scan IDs
 
 6. Add performance validation for poster page
-   - Status: pending
+   - Status: deferred_to_v0.2.4.3
    - Output:
      - preview performance check script/report
      - metrics: image load, FCP, placeholder first paint window
      - threshold evaluation against spec 4.6 budgets
+
+## 3. Patch Notes (Post-acceptance Fixes Included)
+
+1. Vercel runtime stability fixes
+   - embedded poster fonts moved into repo assets and loaded without runtime `node_modules` dependency.
+   - Chromium launch on Vercel aligned to `@sparticuz/chromium` runtime args and sandbox flags.
+2. Poster image loading reliability fixes
+   - soft-timeout strategy updated to avoid aborting in-flight request.
+   - timeout threshold raised from `8s` to `20s` to reduce false failures in serverless cold-start scenarios.
+3. Save flow reliability fixes
+   - mobile webviews without file-share capability now enter fallback guidance instead of hard fail.
+   - WeChat save path upgraded to preview-image first, with bridge fallback.
+   - WeChat poster display path uses network image URL (not `blob:` URL) to preserve long-press save success.
 
 ## 3. Slice Acceptance Gate
 

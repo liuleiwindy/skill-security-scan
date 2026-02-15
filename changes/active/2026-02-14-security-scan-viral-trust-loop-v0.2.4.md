@@ -11,7 +11,7 @@
 
 - Phase: Active
 - Version line: `v0.2.4` (master)
-- Current slice: `v0.2.4.2`
+- Current slice: `v0.2.4.3`
 - Implementation approval: `v0.2.4.1` ready_for_submit
 
 ## 2. Milestones by Slice
@@ -32,7 +32,7 @@
      - backward compatibility of `GET /api/scan/:id/poster`
 
 3. `M3 / v0.2.4.2` - Poster page and save flow
-   - Status: in_progress
+   - Status: completed (sealed)
    - Deliverables:
      - `/scan/poster/[id]` image endpoint integration
      - no query override preview behavior on poster page
@@ -77,7 +77,7 @@
    - Output: `app/api/scan/[id]/poster/image/route.ts`
 
 5. Integrate poster page image + save CTA
-   - Status: in_progress
+   - Status: completed
    - Output: updates under `app/scan/poster/[id]/`
 
 6. Add tests and regression assets
