@@ -10,7 +10,6 @@ import {
   isIOSSafari,
   isWeChatWebView,
 } from "@/lib/mobile-share";
-import { openWeChatImagePreview } from "@/lib/wechat-save";
 import {
   fetchImageAsFile,
   sanitizeFileName,
@@ -173,20 +172,15 @@ export function SaveButton({
     const startTime = Date.now();
 
     try {
-      // WeChat webview: open native image preview directly (best available save UX)
+      // WeChat webview: show guidance sheet only, don't auto-open image preview
       if (isWeChatWebView()) {
-        console.log('WeChat webview detected, opening native image preview');
-        await openWeChatImagePreview(posterUrl);
-        setState('saved');
-        onSaveSuccess?.();
+        console.log('WeChat webview detected, showing save guidance');
+        setState('idle');
+        showFallback();
 
-        // Track completion
+        // Treat as guidance display, not save success
         const duration = Date.now() - startTime;
-        onSaveComplete?.(method, 'success', duration);
-
-        setTimeout(() => {
-          setState('idle');
-        }, 1200);
+        onSaveComplete?.('download', 'error', duration, 'download_not_supported');
         return;
       }
 
@@ -553,11 +547,7 @@ export function SaveButton({
         open={showBottomSheet}
         onClose={hideFallback}
         title="Save Poster"
-        description={
-          isWeChatWebView()
-            ? 'In WeChat, tap "..." in the top-right, choose "Open in Browser", then long press the poster and choose "Save Image".'
-            : 'Long press the poster image, then choose "Save Image".'
-        }
+        description={'Long press the poster image, then choose "Save Image".'}
         confirmText="I got it"
         triggerRef={buttonRef}
       />
