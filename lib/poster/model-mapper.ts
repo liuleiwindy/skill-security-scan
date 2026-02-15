@@ -24,7 +24,7 @@ export const DEFAULT_POSTER_MODEL: PosterRenderModel = {
   lowLabel: "LOW",
   lowNumber: "[ 0 ]",
   cta: "> SCAN TO VERIFY REPORT DETAILS <",
-  short: "POWERED BY MYSKILL.AI",
+  short: "POWERED BY MYSKILL.INFO",
   qrUrl: "/scan/report/scan_default",
 };
 
@@ -129,7 +129,7 @@ export function createPosterModelFromScanReport(report: ScanReport): PosterRende
     lowLabel: "LOW",
     lowNumber: `[ ${report.summary.low} ]`,
     cta: "> SCAN TO VERIFY REPORT DETAILS <",
-    short: "POWERED BY MYSKILL.AI",
+    short: "POWERED BY MYSKILL.INFO",
     qrUrl: `/scan/report/${report.id}`,
   };
 }

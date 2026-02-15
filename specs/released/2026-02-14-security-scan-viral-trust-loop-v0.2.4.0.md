@@ -325,7 +325,7 @@ Smoke render fixture (example):
   "lowLabel": "LOW",
   "lowNumber": "[ 0 ]",
   "cta": "> SCAN TO VERIFY REPORT DETAILS <",
-  "short": "POWERED BY MYSKILL.AI",
+  "short": "POWERED BY MYSKILL.INFO",
   "qrUrl": "https://secscan.dev/r/X9K2"
 }
 ```
