@@ -289,6 +289,8 @@
 
       /* Grade metric gets stronger visual hierarchy than other metrics. */
       .metric-grade {
+        position: relative;
+        overflow: hidden;
         border-color: rgba(20, 255, 198, 0.55);
         background: linear-gradient(
           160deg,
@@ -300,26 +302,70 @@
           0 0 20px rgba(24, 247, 197, 0.18);
       }
 
+      .metric-grade::after {
+        content: "";
+        position: absolute;
+        left: -18%;
+        width: 136%;
+        height: 2px;
+        top: 8px;
+        background: linear-gradient(90deg, transparent, rgba(185, 255, 240, 0.95), transparent);
+        box-shadow: 0 0 16px rgba(24, 247, 197, 0.55);
+        opacity: 0.8;
+        animation: metric-scan 2.6s linear infinite;
+        pointer-events: none;
+      }
+
       .metric-grade .num {
         color: #b9fff0;
         text-shadow:
-          0 0 10px rgba(24, 247, 197, 0.55),
-          0 0 24px rgba(24, 247, 197, 0.24);
-        animation: grade-glow 2.2s ease-in-out infinite;
+          0 0 14px rgba(24, 247, 197, 0.8),
+          0 0 34px rgba(24, 247, 197, 0.46),
+          0 0 58px rgba(24, 247, 197, 0.24);
+        animation: grade-glow 2.2s ease-in-out infinite, grade-flicker 3.2s linear infinite;
+        filter: drop-shadow(0 0 10px rgba(24, 247, 197, 0.6));
       }
 
       @keyframes grade-glow {
         0%, 100% {
           transform: scale(1);
           text-shadow:
-            0 0 8px rgba(24, 247, 197, 0.42),
-            0 0 18px rgba(24, 247, 197, 0.18);
+            0 0 10px rgba(24, 247, 197, 0.55),
+            0 0 28px rgba(24, 247, 197, 0.3),
+            0 0 46px rgba(24, 247, 197, 0.14);
         }
         50% {
-          transform: scale(1.06);
+          transform: scale(1.09);
           text-shadow:
-            0 0 14px rgba(24, 247, 197, 0.72),
-            0 0 34px rgba(24, 247, 197, 0.34);
+            0 0 18px rgba(24, 247, 197, 0.95),
+            0 0 40px rgba(24, 247, 197, 0.52),
+            0 0 66px rgba(24, 247, 197, 0.26);
+        }
+      }
+
+      @keyframes grade-flicker {
+        0%, 19%, 21%, 60%, 62%, 100% {
+          opacity: 1;
+        }
+        20%, 61% {
+          opacity: 0.86;
+        }
+      }
+
+      @keyframes metric-scan {
+        0% {
+          top: 8px;
+          opacity: 0.2;
+        }
+        10% {
+          opacity: 0.85;
+        }
+        85% {
+          opacity: 0.75;
+        }
+        100% {
+          top: calc(100% - 10px);
+          opacity: 0.15;
         }
       }
 

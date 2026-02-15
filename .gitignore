@@ -14,3 +14,4 @@ runs/
 data/reports/*.json
 !data/reports/.gitkeep
 tmp/
+test-results/
