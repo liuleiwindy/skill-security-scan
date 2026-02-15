@@ -1,16 +1,15 @@
 .container {
   --line: rgba(20, 255, 198, 0.24);
-  --line-strong: rgba(20, 255, 198, 0.56);
-  --text: #d6fff4;
-  --muted: #80b7ab;
-  --poster-max-desktop: 560px;
-  min-width: 375px;
+  --line-strong: rgba(20, 255, 198, 0.5);
+  --text: #dffbf4;
+  --muted: #8fb9ad;
+  --poster-glow: rgba(24, 247, 197, 0.4);
   min-height: 100vh;
   color: var(--text);
+  font-family: var(--font-rajdhani), "Segoe UI", sans-serif;
   background:
-    radial-gradient(circle at 12% -8%, rgba(24, 247, 197, 0.22), transparent 38%),
-    radial-gradient(circle at 92% 8%, rgba(16, 201, 255, 0.16), transparent 34%),
-    linear-gradient(180deg, #020705 0%, #020907 100%);
+    radial-gradient(76% 52% at 50% 40%, rgba(8, 54, 42, 0.46), transparent 72%),
+    linear-gradient(180deg, #030604 0%, #040705 100%);
   position: relative;
 }
 
@@ -19,137 +18,316 @@
   position: fixed;
   inset: 0;
   pointer-events: none;
+  background:
+    radial-gradient(46% 30% at 50% 32%, rgba(20, 255, 198, 0.2), transparent 74%),
+    radial-gradient(68% 46% at 50% 72%, rgba(8, 36, 29, 0.26), transparent 78%);
+}
+
+.container::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
   background-image:
-    linear-gradient(rgba(13, 53, 43, 0.28) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(13, 53, 43, 0.28) 1px, transparent 1px);
-  background-size: 34px 34px;
-  opacity: 0.34;
+    linear-gradient(rgba(20, 255, 198, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 255, 198, 0.06) 1px, transparent 1px);
+  background-size: 26px 26px;
+  opacity: 0.2;
 }
 
 .header {
   position: relative;
   z-index: 1;
-  width: min(1100px, calc(100% - 24px));
-  margin: 14px auto 10px;
-  padding: 16px 18px;
-  border-radius: 18px;
+  width: min(1320px, calc(100% - 24px));
+  margin: 16px auto 8px;
+  padding: 14px 18px;
   border: 1px solid var(--line);
-  background: linear-gradient(160deg, rgba(5, 14, 12, 0.96), rgba(4, 10, 8, 0.98));
-  box-shadow: inset 0 0 0 1px rgba(45, 255, 216, 0.08), 0 0 34px rgba(20, 255, 198, 0.08);
+  border-radius: 12px;
+  background: rgba(2, 8, 6, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(45, 255, 216, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brandWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brandDot {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid rgba(20, 255, 198, 0.66);
+  background: linear-gradient(180deg, #20ffcf 0%, #0bb488 100%);
+  box-shadow: 0 0 18px rgba(24, 247, 197, 0.45);
 }
 
 .brand {
-  font-family: "Orbitron", "Segoe UI", sans-serif;
-  font-size: clamp(18px, 2.5vw, 42px);
+  font-family: var(--font-orbitron), "Segoe UI", sans-serif;
+  font-size: clamp(16px, 1.2vw, 22px);
   letter-spacing: 0.08em;
-  color: #c8fff1;
-  line-height: 1;
+  color: #dbfff5;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  gap: 4px;
+  min-height: 36px;
+  min-width: 108px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: #c3eadf;
+  text-decoration: none;
+  background: rgba(6, 13, 10, 0.86);
+  font-family: var(--font-orbitron), "Segoe UI", sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.backLink:hover {
+  border-color: var(--line-strong);
+  color: #e9fff9;
+}
+
+.backLinkLine {
+  display: inline;
 }
 
 .main {
   position: relative;
   z-index: 1;
-  width: min(1100px, calc(100% - 24px));
-  margin: 0 auto 20px;
+  width: min(1120px, calc(100% - 24px));
+  margin: 0 auto 24px;
   display: grid;
-  gap: 14px;
+  gap: 16px;
+  overflow: visible;
+}
+
+.messageSection {
+  text-align: center;
+  margin-top: 4px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-orbitron), "Segoe UI", sans-serif;
+  font-size: clamp(20px, 2.8vw, 34px);
+  letter-spacing: 0.05em;
+  color: #ebfff8;
+  text-shadow: 0 0 18px rgba(24, 247, 197, 0.18);
+}
+
+.subtitle {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: clamp(14px, 1.6vw, 18px);
+  font-family: var(--font-rajdhani), "Segoe UI", sans-serif;
+  letter-spacing: 0.03em;
 }
 
 .posterSection {
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  padding: 10px;
-  background: linear-gradient(160deg, rgba(5, 14, 12, 0.96), rgba(4, 10, 8, 0.98));
-  box-shadow: inset 0 0 0 1px rgba(45, 255, 216, 0.08), 0 0 34px rgba(20, 255, 198, 0.08);
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .posterContainer {
-  width: 100%;
-  margin: 0 auto;
+  width: min(100%, 520px);
+  filter: drop-shadow(0 22px 38px var(--poster-glow));
+}
+
+.posterContainer :global(.container) {
+  border-radius: 18px;
 }
 
 .actionsSection {
+  width: min(100%, 520px);
+  margin: 0 auto;
   display: grid;
-  gap: 12px;
   grid-template-columns: 1fr 1fr;
-}
-
-.saveButtonWrap,
-.backToReportLink {
-  min-height: 50px;
+  gap: 12px;
 }
 
 .saveButtonWrap {
   display: grid;
+  min-width: 0;
 }
 
 .saveButtonWrap :global(button) {
   width: 100%;
-  min-height: 50px;
-  border-radius: 12px;
-  border: 1px solid rgba(20, 255, 198, 0.62);
-  background: linear-gradient(90deg, #19ffd1 0%, #11d7ff 100%);
-  color: #04110d;
-  font-family: "Orbitron", "Segoe UI", sans-serif;
-  letter-spacing: 0.04em;
-  font-size: 15px;
-}
-
-.saveButtonWrap :global(button:hover) {
-  filter: brightness(1.04);
-}
-
-.backToReportLink {
+  min-height: 52px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  visibility: visible;
+  opacity: 1;
   border-radius: 12px;
-  border: 1px solid var(--line);
-  background: rgba(5, 18, 14, 0.8);
-  color: #c9fff2;
-  text-decoration: none;
-  font-family: "Orbitron", "Segoe UI", sans-serif;
-  letter-spacing: 0.04em;
+  border: 1px solid rgba(20, 255, 198, 0.7);
+  background: linear-gradient(90deg, #20ffd2 0%, #0fd6ff 100%);
+  color: #04110d;
+  font-family: var(--font-orbitron), "Segoe UI", sans-serif;
   font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 
-.backToReportLink:hover {
-  border-color: var(--line-strong);
-  background: rgba(8, 27, 21, 0.92);
+.saveButtonWrap :global(button:hover) {
+  filter: brightness(1.06);
+}
+
+.secondaryAction {
+  min-height: 52px;
+  border-radius: 12px;
+  border: 1px solid rgba(158, 184, 175, 0.3);
+  background: rgba(6, 10, 8, 0.76);
+  color: #deefe9;
+  font-family: var(--font-orbitron), "Segoe UI", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.secondaryAction:hover {
+  border-color: rgba(20, 255, 198, 0.48);
+  background: rgba(9, 14, 11, 0.92);
+}
+
+.tip {
+  width: min(100%, 520px);
+  margin: 4px auto 0;
+  text-align: center;
+  color: #91ab9f;
+  font-size: 14px;
+  font-family: var(--font-jetbrains-mono), "SFMono-Regular", monospace;
 }
 
 @media (max-width: 760px) {
+  .header,
+  .main {
+    width: calc(100% - 12px);
+  }
+
   .header {
-    width: calc(100% - 20px);
     margin-top: 10px;
-    margin-bottom: 8px;
-    padding: 14px 16px;
+    margin-bottom: 6px;
+    padding: 10px 12px;
+  }
+
+  .brandDot {
+    width: 20px;
+    height: 20px;
+  }
+
+  .brand {
+    font-size: 14px;
+  }
+
+  .backLink {
+    font-size: 12px;
+    min-height: 40px;
+    min-width: 84px;
+    padding: 0 8px;
+    flex-direction: column;
+    gap: 0;
+    line-height: 1.05;
   }
 
   .main {
-    width: calc(100% - 20px);
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+    gap: 12px;
+  }
+
+  .posterContainer {
+    width: 100%;
+    max-height: 70vh;
+  }
+
+  .posterContainer :global(.container) {
+    max-height: 70vh;
+  }
+
+  .posterContainer :global(.placeholderImage),
+  .posterContainer :global(.fullImage) {
+    object-fit: contain;
+    background: #040705;
+  }
+
+  .actionsSection {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
   }
 
-  .posterSection {
-    padding: 8px;
-    border-radius: 14px;
-  }
-
-  .actionsSection {
-    grid-template-columns: 1fr;
+  .saveButtonWrap :global(button),
+  .secondaryAction {
+    min-height: 48px;
+    font-size: 13px;
+    letter-spacing: 0.04em;
   }
 }
 
-@media (min-width: 900px) {
-  .posterContainer,
-  .actionsSection {
-    max-width: var(--poster-max-desktop);
-    margin-inline: auto;
+@media (max-width: 375px), (max-height: 700px) {
+  .main {
+    gap: 10px;
+    margin-bottom: 8px;
   }
 
-  .posterSection {
-    padding: 18px;
+  .posterContainer {
+    max-height: 62vh;
+  }
+
+  .posterContainer :global(.container) {
+    max-height: 62vh;
+  }
+
+  .actionsSection {
+    width: 100%;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .saveButtonWrap :global(button),
+  .secondaryAction {
+    min-height: 44px;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+  }
+
+  .tip {
+    margin-top: 2px;
+    font-size: 13px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .posterContainer {
+    width: min(40vw, 560px);
+  }
+
+  .actionsSection,
+  .tip {
+    width: min(40vw, 560px);
+  }
+
+  .container::before {
+    background:
+      radial-gradient(42% 30% at 50% 30%, rgba(20, 255, 198, 0.26), transparent 74%),
+      radial-gradient(74% 56% at 50% 72%, rgba(8, 36, 29, 0.32), transparent 80%);
+  }
+
+  .backLink {
+    flex-direction: row;
+    gap: 4px;
   }
 }

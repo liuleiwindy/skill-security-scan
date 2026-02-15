@@ -2,11 +2,30 @@
 
 import React from "react";
 import Link from "next/link";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { JetBrains_Mono, Orbitron, Rajdhani } from "next/font/google";
 import { PosterImage } from "@/components/PosterImage";
 import { SaveButton } from "@/components/SaveButton";
 import { track } from "@/lib/analytics/track";
 import styles from "./poster.module.css";
+
+const orbitron = Orbitron({
+  subsets: ["latin"],
+  weight: ["500", "700", "800"],
+  variable: "--font-orbitron",
+});
+
+const rajdhani = Rajdhani({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-rajdhani",
+});
+
+const jetBrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  variable: "--font-jetbrains-mono",
+});
 
 /**
  * PosterPageContent Component
@@ -23,6 +42,8 @@ import styles from "./poster.module.css";
  * @returns The poster page content component
  */
 export function PosterPageContent({ scanId }: { scanId: string }) {
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+
   /**
    * Track poster page view on component mount
    *
@@ -100,13 +121,41 @@ export function PosterPageContent({ scanId }: { scanId: string }) {
     // Poster load failed
   }, []);
 
+  const handleCopyLink = useCallback(async () => {
+    const fallbackUrl = `/scan/report/${scanId}`;
+    try {
+      const reportUrl =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/scan/report/${scanId}`
+          : fallbackUrl;
+      await navigator.clipboard.writeText(reportUrl);
+      setCopyState("copied");
+    } catch {
+      setCopyState("failed");
+    }
+
+    setTimeout(() => setCopyState("idle"), 1800);
+  }, [scanId]);
+
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${orbitron.variable} ${rajdhani.variable} ${jetBrainsMono.variable}`}>
       <header className={styles.header}>
-        <div className={styles.brand}>MYSKILLS_PROTOCOL</div>
+        <div className={styles.brandWrap}>
+          <span className={styles.brandDot} aria-hidden="true" />
+          <span className={styles.brand}>MYSKILLS_PROTOCOL</span>
+        </div>
+        <Link href={`/scan/report/${scanId}`} className={styles.backLink}>
+          <span className={styles.backLinkLine}>VIEW</span>
+          <span className={styles.backLinkLine}>REPORT</span>
+        </Link>
       </header>
 
       <main className={styles.main}>
+        <section className={styles.messageSection}>
+          <h1 className={styles.title}>SECURITY RATING CONFIRMED</h1>
+          <p className={styles.subtitle}>Save the poster and share your security stance.</p>
+        </section>
+
         <div className={styles.posterSection}>
           <div className={styles.posterContainer}>
             <PosterImage
@@ -126,14 +175,17 @@ export function PosterPageContent({ scanId }: { scanId: string }) {
             />
           </div>
 
-          <Link
-            href={`/scan/report/${scanId}`}
-            className={styles.backToReportLink}
-            aria-label={`View full report for scan ${scanId}`}
+          <button
+            type="button"
+            className={styles.secondaryAction}
+            onClick={handleCopyLink}
+            aria-label="复制报告分享链接"
           >
-            OPEN REPORT
-          </Link>
+            {copyState === "copied" ? "LINK COPIED" : copyState === "failed" ? "COPY FAILED" : "COPY SHARE LINK"}
+          </button>
         </div>
+
+        <p className={styles.tip}>Share this rating to build trust with your users. ✨🛡️</p>
       </main>
     </div>
   );
