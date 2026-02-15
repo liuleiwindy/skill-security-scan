@@ -100,7 +100,7 @@ export default async function ReportPage({
         <section className={`${styles.panel} ${styles.hero}`}>
           <div className={styles.eyebrow}>
             <span className={`${styles.dot} ${dotClassForGrade(report.grade, styles)}`}></span>
-            {report.engineVersion.toUpperCase()}
+            SECURITY SCAN
           </div>
           <h1 className={styles.heroTitle}>
             <span className={styles.lineNeon}>SECURITY REPORT</span>
@@ -191,7 +191,6 @@ export default async function ReportPage({
                 This report is based on static analysis and signature-based pattern matching.
               </p>
               <p className={styles.disclaimerText}>It is not a full security audit and does not execute repository code.</p>
-              <p className={styles.engineVersion}>Engine: {report.engineVersion}</p>
               {statusMismatch ? (
                 <p className={styles.statusRuleWarning}>
                   Status mismatch: report status is {statusLabel(report.status)}, but rule output is{" "}
