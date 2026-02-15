@@ -108,7 +108,7 @@ export default async function ReportPage({
             <span className={styles.lineWhite}>FOR SKILL REPO</span>
           </h1>
           <p className={styles.subtitle}>
-            {report.repoUrl.replace(/^https?:\/\//, "")} · scanned at {new Date(report.scannedAt).toLocaleString()}
+            {report.repoUrl.replace(/^https?:\/\//, "")} · scanned at {new Date(report.scannedAt).toISOString().replace('T', ' ').replace(/\.\d+Z$/, '')} UTC
           </p>
 
           <div className={styles.heroMeta}>
