@@ -166,20 +166,10 @@ export default function ScanPage() {
   return (
     <main className={styles.page}>
       <section className={styles.card}>
-        <p className={styles.badge}>Security Scan v0.2.3</p>
+        <p className={styles.badge}>Security Scan</p>
         <h1 className={styles.title}>Scan Your Skill Repo</h1>
         <p className={styles.subtitle}>
           Paste a GitHub URL, or npm/npx command, to generate a shareable security report and poster.
-        </p>
-        <p
-          style={{
-            fontSize: "0.875rem",
-            color: "#94a3b8",
-            marginTop: "0.5rem",
-            textAlign: "center",
-          }}
-        >
-          v0.2.3: Adds prompt-injection risk scanning on top of the v0.2.2 GitHub + npm analysis.
         </p>
         <form onSubmit={onSubmit} className={styles.form}>
           <input

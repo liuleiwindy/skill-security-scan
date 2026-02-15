@@ -156,7 +156,7 @@ export function PosterPageContent({ scanId }: { scanId: string }) {
       <header className={styles.header}>
         <div className={styles.brandWrap}>
           <span className={styles.brandDot} aria-hidden="true" />
-          <span className={styles.brand}>MYSKILLS_PROTOCOL</span>
+          <span className={styles.brand}>MySkills.info</span>
         </div>
         <Link href={`/scan/report/${scanId}`} className={styles.backLink}>
           <span className={styles.backLinkLine}>VIEW</span>

@@ -38,18 +38,18 @@ export function ReportTopNav() {
   return (
     <div className={styles.navShell}>
       <header className={`${styles.panel} ${styles.topBar}`}>
-        <div className={styles.brand}>MYSKILLS_PROTOCOL</div>
+        <div className={styles.brand}>MySkills.info</div>
 
         <nav className={styles.desktopNav}>
-          <Link href="/" className={styles.chip}>
+          <Link href="https://myskills.info" className={styles.chip}>
             HOME
           </Link>
-          <Link href="/scan" className={styles.chip}>
+          <Link href="https://myskills.info/scan" className={styles.chip}>
             SECURITY SCAN
           </Link>
-          <span className={styles.chip} aria-disabled="true">
+          <Link href="https://myskills.info/leaderboard" className={styles.chip}>
             LEADERBOARD
-          </span>
+          </Link>
         </nav>
 
         <button
@@ -71,15 +71,15 @@ export function ReportTopNav() {
 
       {open ? (
         <nav className={styles.mobileMenuOverlay} id="report-mobile-menu" ref={panelRef}>
-          <Link href="/" className={styles.mobileLink} onClick={() => setOpen(false)}>
+          <Link href="https://myskills.info" className={styles.mobileLink} onClick={() => setOpen(false)}>
             HOME
           </Link>
-          <Link href="/scan" className={styles.mobileLink} onClick={() => setOpen(false)}>
+          <Link href="https://myskills.info/scan" className={styles.mobileLink} onClick={() => setOpen(false)}>
             SECURITY SCAN
           </Link>
-          <span className={styles.mobileLink} aria-disabled="true">
+          <Link href="https://myskills.info/leaderboard" className={styles.mobileLink} onClick={() => setOpen(false)}>
             LEADERBOARD
-          </span>
+          </Link>
         </nav>
       ) : null}
     </div>
