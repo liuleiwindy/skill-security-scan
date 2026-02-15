@@ -2,33 +2,33 @@
 
 ## 0. Links
 
-- Active spec: `specs/active/2026-02-15-security-scan-style-optimization-v0.2.4.4.md`
+- Released spec: `specs/released/2026-02-15-security-scan-style-optimization-v0.2.4.4.md`
 - Previous active baseline: `specs/active/2026-02-15-security-scan-analytics-funnel-v0.2.4.3.md`
 
 ## 1. Execution Status
 
-- Phase: In Progress
-- Spec status: Active
+- Phase: Released
+- Spec status: Released
 - Target version: v0.2.4.4
 
 ## 2. Action List
 
 1. Consolidate style tokens
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - shared palette and typography variables
      - glow/border/shadow token set
      - animation primitives (dot breathe, grade glow, scan line)
 
 2. Implement report page visual overhaul
-   - Status: in_progress
+   - Status: completed
    - Deliverables:
      - cyber hero + gradient title
      - upgraded metrics/cards/buttons
      - detailed risk cards visual update
 
 3. Implement report mobile layout and nav behavior
-   - Status: in_progress
+   - Status: completed
    - Deliverables:
      - mobile order: hero -> summary -> risks
      - desktop-only top nav chips
@@ -36,14 +36,14 @@
      - collapsed state icon-only guarantee
 
 4. Implement grade emphasis and status marker animations
-   - Status: in_progress
+   - Status: completed
    - Deliverables:
      - grade metric stronger glow treatment
      - scan-line effect in grade tile
      - level-aware breathing dot
 
 5. Implement poster page style alignment
-   - Status: in_progress
+   - Status: completed
    - Deliverables:
      - palette/typography/component alignment to report page
      - poster minimal IA: title-only nav + poster image + two CTA buttons
@@ -53,7 +53,7 @@
      - no regression to save/share/QR behavior
 
 6. Implement poster dynamic tagline (config-driven random copy)
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - add standalone poster tagline config file (10-20 lines, target 20)
      - render one random tagline per poster page load
@@ -61,7 +61,7 @@
      - fallback to safe default copy when config unavailable or empty
 
 7. Regression verification
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - report/poster responsive snapshots
      - smoke checks for report/poster routes
@@ -69,7 +69,7 @@
      - analytics trigger non-regression check
 
 8. Documentation update
-   - Status: pending
+   - Status: completed
    - Deliverables:
      - testing note for v0.2.4.4 visual + responsive coverage
      - final release note update after implementation closure

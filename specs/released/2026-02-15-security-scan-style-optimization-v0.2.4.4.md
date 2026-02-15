@@ -1,9 +1,9 @@
-# OpenSpec Spec: Security Scan Style Optimization V0.2.4.4
+# OpenSpec Released Spec: Security Scan Style Optimization V0.2.4.4
 
 ## 0. Meta
 
 - Date: 2026-02-15
-- Stage: Active
+- Stage: Released
 - Owner: Product + Engineering
 - Previous active baseline: `specs/active/2026-02-15-security-scan-analytics-funnel-v0.2.4.3.md`
 
