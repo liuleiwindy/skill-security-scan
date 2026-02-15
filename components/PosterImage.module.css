@@ -6,7 +6,8 @@
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
-  background: #0f172a;
+  background: linear-gradient(160deg, rgba(4, 14, 11, 0.82), rgba(5, 19, 15, 0.72));
+  border: 1px solid rgba(20, 255, 198, 0.22);
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
@@ -21,7 +22,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  background:
+    radial-gradient(circle at 28% 18%, rgba(20, 255, 198, 0.14), transparent 38%),
+    radial-gradient(circle at 76% 84%, rgba(16, 201, 255, 0.12), transparent 40%),
+    linear-gradient(145deg, rgba(5, 18, 14, 0.44), rgba(4, 12, 10, 0.52));
+  backdrop-filter: blur(10px) saturate(130%);
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
+}
+
+.placeholder::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(255, 255, 255, 0.04) 34%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
 }
 
 .placeholderImage {
@@ -29,6 +48,8 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  opacity: 0.45;
+  filter: blur(3px) saturate(1.1);
 }
 
 /* Full Image Layer */
@@ -75,15 +96,34 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(2px);
+  background:
+    radial-gradient(circle at 50% 45%, rgba(20, 255, 198, 0.1), transparent 44%),
+    linear-gradient(160deg, rgba(6, 20, 16, 0.38), rgba(3, 12, 9, 0.5));
+  backdrop-filter: blur(12px) saturate(135%);
+  -webkit-backdrop-filter: blur(12px) saturate(135%);
+}
+
+.loadingIndicator::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 1px solid rgba(190, 255, 243, 0.14);
+  border-radius: inherit;
+  background: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.03) 42%,
+    rgba(255, 255, 255, 0) 100%
+  );
 }
 
 .spinner {
   width: 48px;
   height: 48px;
   animation: spin 1s linear infinite;
-  color: #64748b;
+  color: #8ce9d3;
+  filter: drop-shadow(0 0 12px rgba(20, 255, 198, 0.32));
 }
 
 .spinnerCircle {
@@ -197,7 +237,8 @@
   }
 
   .loadingIndicator {
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
   }
 
   .errorState {

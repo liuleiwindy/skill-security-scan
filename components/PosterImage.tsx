@@ -116,8 +116,15 @@ const ERROR_ACTIONS: Record<PosterImageErrorType, { showRetry: boolean; showBack
 const generateDefaultPlaceholder = (): string => {
   const svg = `
     <svg width="687" height="1024" xmlns="http://www.w3.org/2000/svg">
-      <rect width="100%" height="100%" fill="#1e293b"/>
-      <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#64748b" font-family="system-ui, sans-serif" font-size="18">
+      <defs>
+        <linearGradient id="glass" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#19ffd0" stop-opacity="0.16" />
+          <stop offset="55%" stop-color="#09221c" stop-opacity="0.2" />
+          <stop offset="100%" stop-color="#10c9ff" stop-opacity="0.12" />
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#glass)"/>
+      <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" fill="#9be9d7" font-family="system-ui, sans-serif" font-size="18">
         Loading Poster...
       </text>
     </svg>

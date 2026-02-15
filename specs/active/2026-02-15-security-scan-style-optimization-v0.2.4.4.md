@@ -149,6 +149,15 @@ Disallowed duplicated blocks on poster page:
    - action row width should follow poster width to keep visual balance
 3. Poster image must preserve aspect ratio; no horizontal stretch deformation.
 
+### 6.5 Poster Dynamic Tagline (Config-Driven Random Copy)
+
+1. Poster page bottom tagline must support randomized copy rotation from a predefined pool.
+2. Copy pool size requirement: 10-20 English lines (target 20).
+3. Copy source must be a dedicated config file, not hardcoded inline in component logic.
+4. On each page load, select one line randomly from config pool for display.
+5. If config is missing/invalid/empty, fallback to a single safe default line.
+6. This feature is UI-only and must not alter report/poster API contracts.
+
 ## 7. Technical Constraints
 
 1. keep routing unchanged:
@@ -157,6 +166,7 @@ Disallowed duplicated blocks on poster page:
 2. no breaking change to report/poster API contracts
 3. no removal of existing analytics triggers
 4. animations must degrade gracefully when motion support is limited
+5. dynamic tagline copy must be maintained in a standalone config file for easy future editing
 
 ## 8. Acceptance Criteria
 
@@ -175,6 +185,8 @@ Disallowed duplicated blocks on poster page:
    - mobile allows near full-width poster display
    - desktop uses centered constrained-width poster to avoid stretch ugliness
 10. No regression on report/poster route rendering and existing analytics instrumentation.
+11. Poster tagline text is randomly selected from config-driven copy pool (10-20 lines, target 20).
+12. Tagline copy can be updated by editing config file only (no component code change required).
 
 ## 9. Verification Plan
 
@@ -193,3 +205,6 @@ Disallowed duplicated blocks on poster page:
 4. Regression checks:
    - QR target behavior unchanged
    - analytics events still emitted on key actions
+5. Dynamic copy checks:
+   - refresh poster page multiple times and confirm varied tagline output
+   - verify fallback line appears when copy pool is unavailable or empty

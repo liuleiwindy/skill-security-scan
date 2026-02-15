@@ -7,6 +7,7 @@ import { JetBrains_Mono, Orbitron, Rajdhani } from "next/font/google";
 import { PosterImage } from "@/components/PosterImage";
 import { SaveButton } from "@/components/SaveButton";
 import { track } from "@/lib/analytics/track";
+import posterTaglinesConfig from "@/config/poster-taglines.config.json";
 import styles from "./poster.module.css";
 
 const orbitron = Orbitron({
@@ -43,6 +44,19 @@ const jetBrainsMono = JetBrains_Mono({
  */
 export function PosterPageContent({ scanId }: { scanId: string }) {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+
+  /**
+   * Get a random tagline from config
+   * Falls back to default if config is invalid or empty
+   */
+  const randomTagline = React.useMemo(() => {
+    const { taglines, defaultTagline } = posterTaglinesConfig;
+    if (!Array.isArray(taglines) || taglines.length === 0) {
+      return defaultTagline || "Share your security stance with the world.";
+    }
+    const randomIndex = Math.floor(Math.random() * taglines.length);
+    return taglines[randomIndex] || defaultTagline;
+  }, []);
 
   /**
    * Track poster page view on component mount
@@ -185,7 +199,7 @@ export function PosterPageContent({ scanId }: { scanId: string }) {
           </button>
         </div>
 
-        <p className={styles.tip}>Share this rating to build trust with your users. ✨🛡️</p>
+        <p className={styles.tip}>{randomTagline}</p>
       </main>
     </div>
   );

@@ -43,7 +43,7 @@
      - level-aware breathing dot
 
 5. Implement poster page style alignment
-   - Status: pending
+   - Status: in_progress
    - Deliverables:
      - palette/typography/component alignment to report page
      - poster minimal IA: title-only nav + poster image + two CTA buttons
@@ -52,7 +52,15 @@
      - maintain poster readability and export quality
      - no regression to save/share/QR behavior
 
-6. Regression verification
+6. Implement poster dynamic tagline (config-driven random copy)
+   - Status: pending
+   - Deliverables:
+     - add standalone poster tagline config file (10-20 lines, target 20)
+     - render one random tagline per poster page load
+     - no hardcoded inline copy array inside component
+     - fallback to safe default copy when config unavailable or empty
+
+7. Regression verification
    - Status: pending
    - Deliverables:
      - report/poster responsive snapshots
@@ -60,7 +68,7 @@
      - save/share/download sanity checks
      - analytics trigger non-regression check
 
-7. Documentation update
+8. Documentation update
    - Status: pending
    - Deliverables:
      - testing note for v0.2.4.4 visual + responsive coverage
@@ -82,3 +90,5 @@
    - desktop constrained centered width (no stretched poster)
 6. Report/poster existing functionality (route render, save/share/download/QR) remains intact.
 7. No analytics instrumentation regression on key user actions.
+8. Poster bottom tagline is randomized from config-driven copy pool.
+9. Tagline content updates require config change only, with no component code edits.
