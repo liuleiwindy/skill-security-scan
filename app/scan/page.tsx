@@ -174,7 +174,7 @@ export default function ScanPage() {
         <form onSubmit={onSubmit} className={styles.form}>
           <input
             className={styles.input}
-            placeholder="powered by myskills.info"
+            placeholder="https://github.com/org/repo or npx create-next-app@14"
             value={repoUrl}
             onChange={(e) => setRepoUrl(e.target.value)}
             required

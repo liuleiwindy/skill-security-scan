@@ -203,7 +203,7 @@ export function PosterPageContent({ scanId }: { scanId: string }) {
       </main>
 
       <footer className={styles.footer}>
-        © 2026 myskills.info
+        powered by myskills.info
       </footer>
     </div>
   );
