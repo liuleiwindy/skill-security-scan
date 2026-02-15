@@ -201,6 +201,10 @@ export function PosterPageContent({ scanId }: { scanId: string }) {
 
         <p className={styles.tip}>{randomTagline}</p>
       </main>
+
+      <footer className={styles.footer}>
+        © 2026 myskills.info
+      </footer>
     </div>
   );
 }

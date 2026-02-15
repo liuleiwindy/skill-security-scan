@@ -694,3 +694,13 @@
       "risks";
   }
 }
+
+.footer {
+  margin-top: 24px;
+  padding: 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  font-family: var(--font-orbitron), "Segoe UI", sans-serif;
+  letter-spacing: 0.05em;
+}

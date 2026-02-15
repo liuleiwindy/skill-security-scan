@@ -349,3 +349,17 @@
   padding-left: var(--page-side-padding);
   padding-right: var(--page-side-padding);
 }
+
+.footer {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 16px 18px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  font-family: var(--font-orbitron), "Segoe UI", sans-serif;
+  letter-spacing: 0.05em;
+}

@@ -236,6 +236,9 @@ export default async function ReportPage({
           )}
         </section>
 
+        <footer className={styles.footer}>
+          © 2026 myskills.info
+        </footer>
       </main>
     </div>
   );
