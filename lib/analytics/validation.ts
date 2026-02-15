@@ -39,7 +39,7 @@ export interface AnalyticsEvent {
   duration_ms?: number;
   input_type?: string;
   method?: string;
-  src?: string;
+  src?: string | null;
   ua_basic?: string;
   // Error tracking fields
   error_code?: string;

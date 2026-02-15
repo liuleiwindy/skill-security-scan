@@ -180,12 +180,12 @@ function eventToPayload(event: AnalyticsEvent): AnalyticsEventPayload {
 
 function getTrackingIdentity(events: AnalyticsEvent[]): TrackingIdentity {
   const firstWithDevice = events.find((event) => {
-    const anyEvent = event as Record<string, unknown>;
+    const anyEvent = event as unknown as Record<string, unknown>;
     return typeof anyEvent.device_id === 'string' && anyEvent.device_id.length > 0;
   });
 
   if (firstWithDevice) {
-    const anyEvent = firstWithDevice as Record<string, unknown>;
+    const anyEvent = firstWithDevice as unknown as Record<string, unknown>;
     const sessionCandidate =
       typeof anyEvent.session_id === 'string' && anyEvent.session_id.length > 0
         ? (anyEvent.session_id as string)
