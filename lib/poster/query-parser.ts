@@ -23,7 +23,7 @@ export interface ImageQueryOverrides {
   beatsRatio?: string;
   /** Override proof text (e.g., "PROOF ID: X9K2 · 2026-02-14 14:32 UTC") */
   proof?: string;
-  /** Override short footer text (e.g., "POWERED BY MYSKILL.INFO") */
+  /** Override short footer text (e.g., "POWERED BY MYSKILLS.INFO") */
   short?: string;
   /** Override ring progress percentage (0-100) */
   ringPercent?: number;

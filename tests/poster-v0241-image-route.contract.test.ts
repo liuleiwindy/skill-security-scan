@@ -96,7 +96,7 @@ describeIfRouteExists("v0.2.4.1 poster image route contract", () => {
       lowLabel: "LOW",
       lowNumber: "[ 0 ]",
       cta: "> SCAN TO VERIFY REPORT DETAILS <",
-      short: "POWERED BY MYSKILL.INFO",
+      short: "POWERED BY MYSKILLS.INFO",
       qrUrl: "https://secscan.dev/r/scan_contract",
     } as never);
 
@@ -162,7 +162,7 @@ describeIfRouteExists("v0.2.4.1 poster image route contract", () => {
       lowLabel: "LOW",
       lowNumber: "[ 0 ]",
       cta: "> SCAN TO VERIFY REPORT DETAILS <",
-      short: "POWERED BY MYSKILL.INFO",
+      short: "POWERED BY MYSKILLS.INFO",
       qrUrl: "https://secscan.dev/r/scan_contract",
     } as never);
 
@@ -233,7 +233,7 @@ describeIfRouteExists("v0.2.4.1 poster image route contract", () => {
       lowLabel: "LOW",
       lowNumber: "[ 0 ]",
       cta: "> SCAN TO VERIFY REPORT DETAILS <",
-      short: "POWERED BY MYSKILL.INFO",
+      short: "POWERED BY MYSKILLS.INFO",
       qrUrl: "/scan/report/scan_contract",
     } as never);
 
@@ -305,7 +305,7 @@ describeIfRouteExists("v0.2.4.1 poster image route contract", () => {
       lowLabel: "LOW",
       lowNumber: "[ 0 ]",
       cta: "> SCAN TO VERIFY REPORT DETAILS <",
-      short: "POWERED BY MYSKILL.INFO",
+      short: "POWERED BY MYSKILLS.INFO",
       qrUrl: "https://secscan.dev/r/scan_contract",
     } as never);
 
