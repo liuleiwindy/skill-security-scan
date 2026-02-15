@@ -4,6 +4,7 @@ import React from "react";
 import { useState, useEffect, useRef, useCallback, ReactNode } from "react";
 import Link from "next/link";
 import styles from "./PosterImage.module.css";
+import { isWeChatWebView } from "@/lib/mobile-share";
 
 /**
  * Load state type for PosterImage component
@@ -278,6 +279,11 @@ export function PosterImage({
   const controllerRef = useRef<AbortController | null>(null);
   const timeoutIdRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const progressIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const isWeChat = useRef<boolean>(false);
+
+  useEffect(() => {
+    isWeChat.current = isWeChatWebView();
+  }, []);
 
   /**
    * Handle image load success
@@ -472,22 +478,35 @@ export function PosterImage({
           throw { status: response.status, isHttpError: true };
         }
 
-        const blob = await response.blob();
-        const objectUrl = URL.createObjectURL(blob);
-
-        // Create Image object to verify it loads correctly
+        // Create Image object to verify it loads correctly.
+        // WeChat long-press save requires a real network URL instead of blob: URL.
         const img = new Image();
 
-        img.onload = () => {
-          handleImageLoad(objectUrl);
-        };
+        if (isWeChat.current) {
+          img.onload = () => {
+            handleImageLoad(imgSrc);
+          };
 
-        img.onerror = () => {
-          handleImageError('network', response);
-          URL.revokeObjectURL(objectUrl);
-        };
+          img.onerror = () => {
+            handleImageError('network', response);
+          };
 
-        img.src = objectUrl;
+          img.src = imgSrc;
+        } else {
+          const blob = await response.blob();
+          const objectUrl = URL.createObjectURL(blob);
+
+          img.onload = () => {
+            handleImageLoad(objectUrl);
+          };
+
+          img.onerror = () => {
+            handleImageError('network', response);
+            URL.revokeObjectURL(objectUrl);
+          };
+
+          img.src = objectUrl;
+        }
 
       } catch (error: unknown) {
         // Check if it's an abort error (timeout)
