@@ -299,3 +299,23 @@ Funnel steps (strict order):
 8. `device_id` generation and persistence follow the defined strategy.
 9. Backend table and endpoint are available for analytics ingestion.
 10. Error codes conform to the defined naming standard.
+
+## 15. Post-Release Fixes
+
+### 15.1 2026-02-16 Analytics Insert UUID Fallback Fix
+
+Issue:
+- Some accepted events were not persisted.
+- Runtime error: `null value in column "id" of relation "analytics_events" violates not-null constraint`.
+
+Root cause:
+- Repository insert path explicitly passed `id = NULL`, which bypassed PostgreSQL default value generation (`uuid_generate_v4()`).
+
+Fix:
+- In `lib/analytics/repository.ts`, split insert logic:
+  - when `event.id` exists: insert with explicit `id`.
+  - when `event.id` is absent: omit `id` column so DB default UUID is applied.
+
+Verification:
+- Local `/api/analytics` request accepted and persisted with auto-generated UUID IDs.
+- Manual SQL insert and query checks confirm `analytics_events` write path is healthy.
