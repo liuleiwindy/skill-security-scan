@@ -104,3 +104,22 @@
 7. Error codes comply with standard naming convention.
 
 Gate result: passed (2026-02-15 local verification)
+
+## 4. Post-Release Fix Log
+
+### 4.1 2026-02-16 `analytics_events.id` null-insert fix
+
+- Type: production bug fix (data persistence)
+- Scope: `lib/analytics/repository.ts`
+- Symptom:
+  - `POST /api/analytics` returned accepted events, but rows were missing.
+  - DB error: `null value in column "id" ... violates not-null constraint`.
+- Root cause:
+  - Insert SQL always included `id`; when event had no `id`, code passed `NULL`.
+  - This prevented `uuid_generate_v4()` default from running.
+- Fix detail:
+  - Use two insert paths:
+    - explicit `id` insert when `event.id` is provided
+    - omit `id` column when `event.id` is not provided
+- Result:
+  - Accepted analytics events are now persisted correctly with DB-generated UUID IDs.

@@ -118,35 +118,63 @@ export async function insertAnalyticsEvent(event: DatabaseAnalyticsEvent): Promi
 
     const propsJson = event.props ? JSON.stringify(event.props) : null;
     const createdAt = event.created_at ? event.created_at.toISOString() : null;
-
-    await sql`
-      INSERT INTO analytics_events (
-        id,
-        event_name,
-        scan_id,
-        device_id,
-        session_id,
-        src,
-        status,
-        error_code,
-        duration_ms,
-        props,
-        created_at
-      )
-      VALUES (
-        ${event.id || null},
-        ${event.event_name},
-        ${event.scan_id || null},
-        ${event.device_id},
-        ${event.session_id || null},
-        ${event.src || null},
-        ${event.status || null},
-        ${event.error_code || null},
-        ${event.duration_ms || null},
-        ${propsJson},
-        ${createdAt}
-      )
-    `;
+    if (event.id) {
+      await sql`
+        INSERT INTO analytics_events (
+          id,
+          event_name,
+          scan_id,
+          device_id,
+          session_id,
+          src,
+          status,
+          error_code,
+          duration_ms,
+          props,
+          created_at
+        )
+        VALUES (
+          ${event.id},
+          ${event.event_name},
+          ${event.scan_id || null},
+          ${event.device_id},
+          ${event.session_id || null},
+          ${event.src || null},
+          ${event.status || null},
+          ${event.error_code || null},
+          ${event.duration_ms || null},
+          ${propsJson},
+          ${createdAt}
+        )
+      `;
+    } else {
+      await sql`
+        INSERT INTO analytics_events (
+          event_name,
+          scan_id,
+          device_id,
+          session_id,
+          src,
+          status,
+          error_code,
+          duration_ms,
+          props,
+          created_at
+        )
+        VALUES (
+          ${event.event_name},
+          ${event.scan_id || null},
+          ${event.device_id},
+          ${event.session_id || null},
+          ${event.src || null},
+          ${event.status || null},
+          ${event.error_code || null},
+          ${event.duration_ms || null},
+          ${propsJson},
+          ${createdAt}
+        )
+      `;
+    }
   } catch (error) {
     console.error(
       '[analytics-repository] Failed to insert analytics event:',
@@ -207,34 +235,63 @@ export async function insertAnalyticsEvents(
     for (const event of validEvents) {
       const propsJson = event.props ? JSON.stringify(event.props) : null;
       const createdAt = event.created_at ? event.created_at.toISOString() : null;
-      await sql`
-        INSERT INTO analytics_events (
-          id,
-          event_name,
-          scan_id,
-          device_id,
-          session_id,
-          src,
-          status,
-          error_code,
-          duration_ms,
-          props,
-          created_at
-        )
-        VALUES (
-          ${event.id || null},
-          ${event.event_name},
-          ${event.scan_id || null},
-          ${event.device_id},
-          ${event.session_id || null},
-          ${event.src || null},
-          ${event.status || null},
-          ${event.error_code || null},
-          ${event.duration_ms || null},
-          ${propsJson},
-          ${createdAt}
-        )
-      `;
+      if (event.id) {
+        await sql`
+          INSERT INTO analytics_events (
+            id,
+            event_name,
+            scan_id,
+            device_id,
+            session_id,
+            src,
+            status,
+            error_code,
+            duration_ms,
+            props,
+            created_at
+          )
+          VALUES (
+            ${event.id},
+            ${event.event_name},
+            ${event.scan_id || null},
+            ${event.device_id},
+            ${event.session_id || null},
+            ${event.src || null},
+            ${event.status || null},
+            ${event.error_code || null},
+            ${event.duration_ms || null},
+            ${propsJson},
+            ${createdAt}
+          )
+        `;
+      } else {
+        await sql`
+          INSERT INTO analytics_events (
+            event_name,
+            scan_id,
+            device_id,
+            session_id,
+            src,
+            status,
+            error_code,
+            duration_ms,
+            props,
+            created_at
+          )
+          VALUES (
+            ${event.event_name},
+            ${event.scan_id || null},
+            ${event.device_id},
+            ${event.session_id || null},
+            ${event.src || null},
+            ${event.status || null},
+            ${event.error_code || null},
+            ${event.duration_ms || null},
+            ${propsJson},
+            ${createdAt}
+          )
+        `;
+      }
     }
 
     console.log(
