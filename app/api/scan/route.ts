@@ -10,6 +10,12 @@ import { RepoFetchError } from '@/lib/scan/github';
 import { abuseGuard } from '@/lib/scan/abuse-guard';
 
 /**
+ * Vercel function max duration (seconds).
+ * Keep this above SCAN_HARD_TIMEOUT_MS / 1000 for effective hard-timeout handling.
+ */
+export const maxDuration = 120;
+
+/**
  * 从 NextRequest 中提取客户端 IP
  * 优先级：x-forwarded-for > x-real-ip > fallback 'unknown'
  * @param request NextRequest
