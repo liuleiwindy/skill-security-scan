@@ -26,7 +26,7 @@ describe("npm intake", () => {
     });
   });
 
-  it("fetches npm package files from metadata and tar entries", async () => {
+  it("fetches npm package files from metadata and extracted entries", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: string) => {
@@ -49,36 +49,10 @@ describe("npm intake", () => {
     );
 
     __setNpmDepsForTest({
-      execFile: ((
-        _cmd: string,
-        args: string[],
-        _opts: unknown,
-        cb: (error: Error | null, stdout: string | Buffer, stderr: string | Buffer) => void,
-      ) => {
-        if (args[0] === "-tvzf") {
-          cb(
-            null,
-            [
-              "-rw-r--r-- 0 root root 40 Feb 11 00:00 package/src/index.ts",
-              "-rw-r--r-- 0 root root 20 Feb 11 00:00 package/README.md",
-            ].join("\n"),
-            "",
-          );
-          return;
-        }
-
-        const entry = args[2];
-        if (entry === "package/src/index.ts") {
-          cb(null, Buffer.from("export const ok = true;\n"), Buffer.from(""));
-          return;
-        }
-        if (entry === "package/README.md") {
-          cb(null, Buffer.from("# demo\n"), Buffer.from(""));
-          return;
-        }
-
-        cb(new Error("unexpected tar command"), "", "");
-      }) as any,
+      extractTarEntries: async () => [
+        { entryPath: "package/src/index.ts", type: "file", content: Buffer.from("export const ok = true;\n") },
+        { entryPath: "package/README.md", type: "file", content: Buffer.from("# demo\n") },
+      ],
     });
 
     const result = await fetchNpmPackageFiles("npm i foo");
@@ -108,21 +82,12 @@ describe("npm intake", () => {
     );
 
     __setNpmDepsForTest({
-      execFile: ((
-        _cmd: string,
-        args: string[],
-        _opts: unknown,
-        cb: (error: Error | null, stdout: string | Buffer, stderr: string | Buffer) => void,
-      ) => {
-        if (args[0] === "-tvzf") {
-          const lines = Array.from({ length: 301 }).map(
-            (_, i) => `-rw-r--r-- 0 root root 10 Feb 11 00:00 package/src/f${i}.ts`,
-          );
-          cb(null, lines.join("\n"), "");
-          return;
-        }
-        cb(new Error("unexpected tar command"), "", "");
-      }) as any,
+      extractTarEntries: async () =>
+        Array.from({ length: 301 }).map((_, i) => ({
+          entryPath: `package/src/f${i}.ts`,
+          type: "file" as const,
+          content: Buffer.from("x"),
+        })),
     });
 
     await expect(fetchNpmPackageFiles("npx foo")).rejects.toMatchObject({
@@ -150,22 +115,13 @@ describe("npm intake", () => {
     );
 
     __setNpmDepsForTest({
-      execFile: ((
-        _cmd: string,
-        args: string[],
-        _opts: unknown,
-        cb: (error: Error | null, stdout: string | Buffer, stderr: string | Buffer) => void,
-      ) => {
-        if (args[0] === "-tvzf") {
-          cb(null, "-rw-r--r-- 0 root root 500000 Feb 11 00:00 package/src/big.ts", "");
-          return;
-        }
-        if (args[0] === "-xOzf") {
-          cb(null, Buffer.alloc(300 * 1024 + 1, "a"), Buffer.from(""));
-          return;
-        }
-        cb(new Error("unexpected tar command"), "", "");
-      }) as any,
+      extractTarEntries: async () => [
+        {
+          entryPath: "package/src/big.ts",
+          type: "file",
+          content: Buffer.alloc(300 * 1024 + 1, "a"),
+        },
+      ],
     });
 
     await expect(fetchNpmPackageFiles("npm install foo")).rejects.toMatchObject({
@@ -227,3 +183,4 @@ describe("npm intake", () => {
     });
   });
 });
+

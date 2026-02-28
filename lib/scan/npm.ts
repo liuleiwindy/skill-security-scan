@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { execFile } from "node:child_process";
+import { gunzipSync } from "node:zlib";
 import type { MockFile, ScanOptions } from "./scan-types";
 import {
   DEFAULT_SCAN_OPTIONS,
@@ -12,28 +12,15 @@ import {
 } from "./scan-policy";
 import { RepoFetchError } from "./github";
 
-type ExecFileFn = typeof execFile;
+type TarEntry = {
+  entryPath: string;
+  type: "file" | "dir" | "symlink" | "other";
+  content: Buffer;
+};
 
 type NpmDeps = {
-  execFile: ExecFileFn;
+  extractTarEntries: (tarball: Buffer, timeoutMs: number) => Promise<TarEntry[]>;
 };
-
-let npmDeps: NpmDeps = {
-  execFile,
-};
-
-export function __setNpmDepsForTest(overrides: Partial<NpmDeps>) {
-  npmDeps = {
-    ...npmDeps,
-    ...overrides,
-  };
-}
-
-export function __resetNpmDepsForTest() {
-  npmDeps = {
-    execFile,
-  };
-}
 
 export type ScanInputKind = "github_url" | "npm_command" | "unknown";
 
@@ -68,8 +55,6 @@ type NpmRegistryResponse = {
   "dist-tags"?: Record<string, string>;
   versions?: Record<string, { version?: string; dist?: { tarball?: string } }>;
 };
-
-const MONTHS = new Set(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]);
 
 function withTimeoutError<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   return promise.catch((error) => {
@@ -439,36 +424,95 @@ async function downloadTarball(url: string, maxBytes: number, timeoutMs: number)
   }
 }
 
-function parseTarList(stdout: string): Array<{ entryPath: string; type: "file" | "dir" | "symlink" | "other" }> {
-  const lines = stdout.split("\n").map((line) => line.trim()).filter(Boolean);
-  const entries: Array<{ entryPath: string; type: "file" | "dir" | "symlink" | "other" }> = [];
+function isAllZeroBlock(block: Buffer): boolean {
+  for (let i = 0; i < block.length; i += 1) {
+    if (block[i] !== 0) return false;
+  }
+  return true;
+}
 
-  for (const line of lines) {
-    const tokens = line.split(/\s+/);
-    if (tokens.length < 7) continue;
+function readNullTerminatedString(buffer: Buffer, start: number, length: number): string {
+  const slice = buffer.subarray(start, start + length);
+  const zero = slice.indexOf(0);
+  const raw = zero >= 0 ? slice.subarray(0, zero) : slice;
+  return raw.toString("utf8").trim();
+}
 
-    const mode = tokens[0];
-    const monthIndex = tokens.findIndex((token) => MONTHS.has(token));
-    if (monthIndex < 0 || monthIndex + 3 >= tokens.length) continue;
+function parseOctal(buffer: Buffer, start: number, length: number): number {
+  const raw = readNullTerminatedString(buffer, start, length).replace(/\0/g, "").trim();
+  if (!raw) return 0;
+  const normalized = raw.replace(/[^0-7]/g, "");
+  if (!normalized) return 0;
+  return Number.parseInt(normalized, 8);
+}
 
-    let name = tokens.slice(monthIndex + 3).join(" ");
-    const typeChar = mode[0];
-    if (typeChar === "l") {
-      name = name.split(" -> ")[0];
+function parseTarEntries(tarBuffer: Buffer): TarEntry[] {
+  const entries: TarEntry[] = [];
+  let offset = 0;
+  while (offset + 512 <= tarBuffer.length) {
+    const header = tarBuffer.subarray(offset, offset + 512);
+    if (isAllZeroBlock(header)) {
+      break;
     }
 
-    const cleaned = name.replace(/^\.\//, "");
-    if (!cleaned) continue;
+    const name = readNullTerminatedString(header, 0, 100);
+    const prefix = readNullTerminatedString(header, 345, 155);
+    const entryPath = prefix ? `${prefix}/${name}` : name;
+    const typeFlag = readNullTerminatedString(header, 156, 1) || "0";
+    const size = parseOctal(header, 124, 12);
+    const contentStart = offset + 512;
+    const contentEnd = contentStart + size;
+    if (contentEnd > tarBuffer.length) {
+      throw new RepoFetchError("npm_fetch_failed", "Failed to extract package entries safely");
+    }
+    const content = tarBuffer.subarray(contentStart, contentEnd);
 
-    let type: "file" | "dir" | "symlink" | "other" = "other";
-    if (typeChar === "-") type = "file";
-    if (typeChar === "d") type = "dir";
-    if (typeChar === "l") type = "symlink";
+    let type: TarEntry["type"] = "other";
+    if (typeFlag === "0" || typeFlag === "\0") type = "file";
+    if (typeFlag === "5") type = "dir";
+    if (typeFlag === "2") type = "symlink";
 
-    entries.push({ entryPath: cleaned, type });
+    entries.push({
+      entryPath: entryPath.replace(/^\.\//, ""),
+      type,
+      content: Buffer.from(content),
+    });
+
+    const payloadBlocks = Math.ceil(size / 512);
+    offset = contentStart + payloadBlocks * 512;
   }
 
   return entries;
+}
+
+function defaultExtractTarEntries(tarball: Buffer, timeoutMs: number): Promise<TarEntry[]> {
+  return withTimeoutError(
+    Promise.resolve().then(() => {
+      const inflated = gunzipSync(tarball);
+      return parseTarEntries(inflated);
+    }),
+    timeoutMs,
+  ).catch((error) => {
+    if (error instanceof RepoFetchError) throw error;
+    throw new RepoFetchError("npm_fetch_failed", "Failed to extract package entries safely");
+  });
+}
+
+let npmDeps: NpmDeps = {
+  extractTarEntries: defaultExtractTarEntries,
+};
+
+export function __setNpmDepsForTest(overrides: Partial<NpmDeps>) {
+  npmDeps = {
+    ...npmDeps,
+    ...overrides,
+  };
+}
+
+export function __resetNpmDepsForTest() {
+  npmDeps = {
+    extractTarEntries: defaultExtractTarEntries,
+  };
 }
 
 function sanitizeTarEntryPath(entryPath: string): string {
@@ -485,30 +529,6 @@ function sanitizeTarEntryPath(entryPath: string): string {
   }
 
   return normalized;
-}
-
-function execTar(args: string[], timeoutMs: number, encoding: BufferEncoding | "buffer" = "utf8"): Promise<{ stdout: string | Buffer; stderr: string | Buffer }> {
-  return withTimeoutError(
-    new Promise((resolve, reject) => {
-      npmDeps.execFile(
-        "tar",
-        args,
-        {
-          timeout: timeoutMs,
-          maxBuffer: 20 * 1024 * 1024,
-          encoding,
-        },
-        (error, stdout, stderr) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-          resolve({ stdout: stdout as string | Buffer, stderr: stderr as string | Buffer });
-        },
-      );
-    }),
-    timeoutMs,
-  );
 }
 
 export async function fetchNpmPackageFiles(input: string, options: NpmFetchOptions = {}): Promise<NpmFetchResult> {
@@ -539,13 +559,9 @@ export async function fetchNpmPackageFiles(input: string, options: NpmFetchOptio
   const tarball = await downloadTarball(resolved.tarballUrl, maxTarballBytes, remainingMs());
 
   const workspaceDir = await fs.mkdtemp(path.join(os.tmpdir(), "skill-npm-scan-"));
-  const tarballPath = path.join(workspaceDir, "package.tgz");
 
   try {
-    await fs.writeFile(tarballPath, tarball);
-
-    const listed = await execTar(["-tvzf", tarballPath], remainingMs(), "utf8");
-    const entries = parseTarList(String(listed.stdout));
+    const entries = await npmDeps.extractTarEntries(tarball, remainingMs());
 
     const fileEntries = entries.filter((entry) => entry.type === "file");
     if (fileEntries.length > maxExtractedFiles) {
@@ -563,8 +579,7 @@ export async function fetchNpmPackageFiles(input: string, options: NpmFetchOptio
         continue;
       }
 
-      const extracted = await execTar(["-xOzf", tarballPath, entry.entryPath], remainingMs(), "buffer");
-      const buffer = extracted.stdout as Buffer;
+      const buffer = entry.content;
 
       if (buffer.length > maxFileBytes) {
         throw new RepoFetchError("npm_extracted_file_too_large", "An extracted file exceeds per-file scan size limit");
